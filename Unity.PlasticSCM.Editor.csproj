@@ -60,10 +60,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Analyzer Include="/Users/steven/.vscode/extensions/visualstudiotoolsforunity.vstuc-1.1.2/Analyzers/Microsoft.Unity.Analyzers.dll" />
-    <Analyzer Include="/Users/steven/workspace/Capstone/Library/PackageCache/com.unity.collab-proxy@2.8.2/Lib/Editor/unityplastic.dll" />
-    <Analyzer Include="/Users/steven/workspace/Capstone/Library/PackageCache/com.unity.collab-proxy@2.8.2/Lib/Editor/Unity.Plastic.Newtonsoft.Json.dll" />
-    <Analyzer Include="/Users/steven/workspace/Capstone/Library/PackageCache/com.unity.collab-proxy@2.8.2/Lib/Editor/log4netPlastic.dll" />
-    <Analyzer Include="/Users/steven/workspace/Capstone/Library/PackageCache/com.unity.collab-proxy@2.8.2/Lib/Editor/Unity.Plastic.Antlr3.Runtime.dll" />
     <Analyzer Include="/Applications/Unity/Hub/Editor/2022.3.44f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.SourceGenerators.dll" />
     <Analyzer Include="/Applications/Unity/Hub/Editor/2022.3.44f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
@@ -78,8 +74,8 @@
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/UI/RunModal.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Merge/Developer/DirectoryConflicts/MoveDeleteMenu.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Tool/PlasticExeLauncher.cs" />
-    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Diff/GetClientDiffInfos.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Merge/Developer/DirectoryConflicts/DrawDirectoryResolutionPanel.cs" />
+    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Diff/GetClientDiffInfos.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Diff/DiffTreeView.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Locks/LocksViewMenu.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/UI/UnityThreadWaiter.cs" />
@@ -159,8 +155,8 @@
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Developer/ProgressOperationHandler.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/_Deprecated/CollabPlugin.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/CreateWorkspace/DrawCreateWorkspaceView.cs" />
-    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Tool/FindTool.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Shelves/ShelvesListView.cs" />
+    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Tool/FindTool.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Configuration/CloudEdition/Welcome/OrganizationPanel.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/PendingChanges/Dialogs/LaunchCheckinConflictsDialog.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Locks/LocksListView.cs" />
@@ -192,8 +188,8 @@
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Merge/Gluon/ChangeTreeViewItem.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/PendingChanges/PendingChangesTab.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Changesets/LaunchDiffOperations.cs" />
-    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Configuration/SSOCredentialsDialog.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/_Deprecated/WebApi/ChangesetFromCollabCommitResponse.cs" />
+    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Configuration/SSOCredentialsDialog.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/GetRelativePath.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Merge/IIncomingChangesTab.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Inspector/InspectorAssetSelection.cs" />
@@ -205,8 +201,8 @@
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/History/HistoryListViewItem.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/AssetMenu/Dialogs/CheckinDialog.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/UI/UIElements/ProgressControlsForDialogs.cs" />
-    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/PendingChanges/Changelists/MoveToChangelistMenuBuilder.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/EnumExtensions.cs" />
+    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/PendingChanges/Changelists/MoveToChangelistMenuBuilder.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/PendingChanges/Dialogs/LaunchDependenciesDialog.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/PendingChanges/PendingChangesMultiColumnHeader.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/PendingChanges/PendingChangesTreeHeaderState.cs" />
@@ -243,8 +239,8 @@
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Configuration/ChannelCertificateUiImpl.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/UI/Images.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/PendingChanges/DrawOperationSuccess.cs" />
-    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/UI/TabButton.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/UI/StatusBar/GUIContentNotification.cs" />
+    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/UI/TabButton.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Gluon/ProgressOperationHandler.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/OrganizationsInformation.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/AssetMenu/AssetCopyPathOperation.cs" />
@@ -366,8 +362,8 @@
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/PendingChanges/FilesFilterPatternsMenuBuilder.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Merge/Developer/DirectoryConflicts/LoadedTwiceMenu.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Diff/DiffTreeViewMenu.cs" />
-    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Welcome/DownloadAndInstallOperation.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/CreateWorkspace/CreateWorkspaceView.cs" />
+    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Welcome/DownloadAndInstallOperation.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/AutoRefresh.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Locks/LocksListHeaderState.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Gluon/Errors/ErrorsListView.cs" />
@@ -398,8 +394,8 @@
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/PendingChanges/Dialogs/EmptyCommentDialog.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/Branch/BranchesListHeaderState.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Configuration/MissingEncryptionPasswordPromptHandler.cs" />
-    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/ExternalLink.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/UI/Tree/ListViewItemIds.cs" />
+    <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/ExternalLink.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Views/History/HistoryListHeaderState.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Developer/UpdateReport/UpdateReportListHeaderState.cs" />
     <Compile Include="Library/PackageCache/com.unity.collab-proxy@2.8.2/Editor/Tool/IsExeVersion.cs" />
