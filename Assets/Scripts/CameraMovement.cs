@@ -2,11 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CamerMovement : MonoBehaviour
+public class CameraMovement : MonoBehaviour
 {
-    public float moveSpeed;
-    public float lookSensitivity;
-    public float maxLookAngle;
+    public float moveSpeed = 1;
+    public float lookSensitivity = 1.5f;
+    public float maxLookAngle = 90f;
 
     private float yaw = 0f;
     private float pitch = 0f;
@@ -20,7 +20,8 @@ public class CamerMovement : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.LeftShift)|| Input.GetKey(KeyCode.RightShift)){
+        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+        {
             HandleLook();
             HandleMovement();
         }
@@ -28,7 +29,7 @@ public class CamerMovement : MonoBehaviour
 
     void HandleLook()
     {
-        if (Input.GetMouseButton(1)) 
+        if (Input.GetMouseButton(1)) // right mouse button
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -52,9 +53,9 @@ public class CamerMovement : MonoBehaviour
     void HandleMovement()
     {
         Vector3 input = new Vector3(
-            Input.GetAxisRaw("Horizontal"), 
+            Input.GetAxisRaw("Horizontal"),
             0f,
-            Input.GetAxisRaw("Vertical")    
+            Input.GetAxisRaw("Vertical")
         );
 
         Vector3 move = transform.TransformDirection(input).normalized;
