@@ -1,43 +1,91 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Movement : MonoBehaviour
 {
-    // Start is called before the first frame update
-    public float speed;
-    public float moveDistance;
+    public float speed = 5f;
+    public float moveDistance = 1f;
+    public Transform cameraTransform; // assign your camera here
+
+    public enum SnapMode { None, Nearest, Floor, Ceil }
+    public SnapMode snapMode = SnapMode.Nearest;
+
+    public bool useWorldAxes = false;    // true = W always moves world-forward (Z), ignores camera
+    public bool blockMultipleKeys = true; // prevent diagonal from multiple key presses
+
     private Rigidbody rb;
     private bool isMoving = false;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if (!Input.GetMouseButton(1) && (!Input.GetKey(KeyCode.LeftShift)||Input.GetKey(KeyCode.RightShift))){
-            if (isMoving) return;
+        // Only move when not holding right mouse and not holding either Shift
+        if (Input.GetMouseButton(1) || Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+            return;
 
-            Vector3 direction = Vector3.zero;
+        if (isMoving) return;
 
-            if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
-                direction = Vector3.forward;
-            else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
-                direction = Vector3.back;
-            else if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
-                direction = Vector3.left;
-            else if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
-                direction = Vector3.right;
+        bool w = Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow);
+        bool s = Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow);
+        bool a = Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow);
+        bool d = Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow);
 
-            if (direction != Vector3.zero)
-            {
-                StartCoroutine(TimedMovement(direction));
-            }
+        int pressed = (w?1:0) + (s?1:0) + (a?1:0) + (d?1:0);
+        if (pressed == 0) return;
+
+        // Prevent diagonal by choosing one key when multiple are pressed (priority: W > S > A > D).
+        if (blockMultipleKeys && pressed > 1)
+        {
+            if (w) { s = a = d = false; }
+            else if (s) { a = d = false; }
+            else if (a) { d = false; }
         }
+
+        Vector3 dir = Vector3.zero;
+        float baseYaw;
+
+        if (useWorldAxes)
+        {
+            baseYaw = 0f; // world-forward = 0°
+        }
+        else
+        {
+            float cameraYaw = cameraTransform ? cameraTransform.eulerAngles.y : 0f;
+            baseYaw = (snapMode == SnapMode.None) ? cameraYaw : SnapAngle(cameraYaw);
+        }
+
+        if (w) dir = Quaternion.Euler(0f, baseYaw + 0f, 0f) * Vector3.forward;
+        if (s) dir = Quaternion.Euler(0f, baseYaw + 180f, 0f) * Vector3.forward;
+        if (a) dir = Quaternion.Euler(0f, baseYaw - 90f, 0f) * Vector3.forward;
+        if (d) dir = Quaternion.Euler(0f, baseYaw + 90f, 0f) * Vector3.forward;
+
+        dir.y = 0f;
+        dir.Normalize();
+
+        StartCoroutine(TimedMovement(dir));
     }
-    IEnumerator TimedMovement(Vector3 direction){
+
+    float SnapAngle(float angle)
+    {
+        float unit = 90f;
+        float ratio = angle / unit;
+        float snappedRatio = 0f;
+        switch (snapMode)
+        {
+            case SnapMode.Nearest: snappedRatio = Mathf.Round(ratio); break;
+            case SnapMode.Floor:   snappedRatio = Mathf.Floor(ratio); break;
+            case SnapMode.Ceil:    snappedRatio = Mathf.Ceil(ratio); break;
+            default: snappedRatio = ratio; break;
+        }
+        return snappedRatio * unit;
+    }
+
+    IEnumerator TimedMovement(Vector3 direction)
+    {
         isMoving = true;
         Vector3 start = rb.position;
         Vector3 end = start + direction * moveDistance;
@@ -56,3 +104,6 @@ public class Movement : MonoBehaviour
         isMoving = false;
     }
 }
+
+
+
