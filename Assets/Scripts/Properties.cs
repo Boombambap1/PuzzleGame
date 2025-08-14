@@ -1,8 +1,8 @@
 using UnityEngine;
 
-public class Properties: MonoBehaviour
+public class Properties : MonoBehaviour
 {
-    public Vector3 offset = new Vector3(0f, 1f, 0f); // height offset above parent ok set it to like 5 or smt make sure it doesnt interfere with other colliders
+    public Vector3 offset = new Vector3(0f, 1f, 0f); // height offset above parent
     private Rigidbody rb;
     private Transform currentParent;
     private bool isStuck = false;
@@ -25,11 +25,10 @@ public class Properties: MonoBehaviour
     {
         if (!isStuck && collision.gameObject.CompareTag("Stickable"))
         {
-            // Check all contact points
+            // check all contact points
             foreach (ContactPoint contact in collision.contacts)
             {
-                // If contact normal points mostly upward relative to this block,
-                // meaning we landed on top of the other block
+                // if contact normal points mostly upward relative to this block (we landed on top of the other block)
                 if (Vector3.Dot(contact.normal, Vector3.up) > 0.7f)
                 {
                     StickTo(collision.transform);
@@ -60,4 +59,3 @@ public class Properties: MonoBehaviour
         rb.useGravity = true;
     }
 }
-

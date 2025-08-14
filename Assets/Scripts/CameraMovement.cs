@@ -14,19 +14,20 @@ public class CameraMovement : MonoBehaviour
     void Start()
     {
         Vector3 angles = transform.eulerAngles;
-        yaw = angles.y;
-        pitch = angles.x;
+        yaw = angles.y; // rotation about the vertical axis (turning left and right)
+        pitch = angles.x; // rotation about the horizontal axis (looking up and down)
     }
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.LeftShift)|| Input.GetKey(KeyCode.RightShift)|| Input.GetMouseButton(1)){
+        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) || Input.GetMouseButton(1))
+        {
             HandleLook();
             HandleMovement();
         }
     }
 
-    void HandleLook()
+    void HandleLook() // NOTE: this entire function is not needed if we're doing orthographic perspective
     {
         if (Input.GetMouseButton(1)) // right mouse button
         {
