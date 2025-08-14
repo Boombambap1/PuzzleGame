@@ -28,7 +28,8 @@ public class Properties : MonoBehaviour
             // check all contact points
             foreach (ContactPoint contact in collision.contacts)
             {
-                // if contact normal points mostly upward relative to this block (we landed on top of the other block)
+                // if contact normal points mostly upward relative to this block
+                // (we landed on top of the other block)
                 if (Vector3.Dot(contact.normal, Vector3.up) > 0.7f)
                 {
                     StickTo(collision.transform);

@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class CameraMovement : MonoBehaviour
 {
-    public float moveSpeed = 1;
+    public float moveSpeed = 1f;
     public float lookSensitivity = 1.5f;
     public float maxLookAngle = 90f;
 

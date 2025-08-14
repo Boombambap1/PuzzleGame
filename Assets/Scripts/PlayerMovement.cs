@@ -1,7 +1,8 @@
 using System.Collections;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))] // makes sure that GameObjects this script is attached to automatically has a Rigidbody component
+// makes sure that GameObjects this script is attached to automatically has a Rigidbody component
+[RequireComponent(typeof(Rigidbody))]
 public class Movement : MonoBehaviour
 {
     public float speed = 5f;
@@ -13,7 +14,9 @@ public class Movement : MonoBehaviour
 
     public bool useWorldAxes = false;    // true = W always moves world-forward (Z) and ignores camera
     public bool blockMultipleKeys = true; // prevent diagonal from multiple key presses
-    public bool IsMoving { get; private set; } = false; // visible but not modifiable to other scripts; not visible in the inspector
+
+    // visible but not modifiable to other scripts; not visible in the inspector
+    public bool IsMoving { get; private set; } = false;
 
     private Rigidbody rb;
 
@@ -62,7 +65,8 @@ public class Movement : MonoBehaviour
         else
         {
             float cameraYaw = cameraTransform ? cameraTransform.eulerAngles.y : 0f;
-            baseYaw = (snapMode == SnapMode.None) ? cameraYaw : SnapAngle(cameraYaw); // None mode always goes in the same direction as the camera angle 
+            // None mode always goes in the same direction as the camera angle 
+            baseYaw = (snapMode == SnapMode.None) ? cameraYaw : SnapAngle(cameraYaw);
         }
 
         if (w) dir = Quaternion.Euler(0f, baseYaw + 0f, 0f) * Vector3.forward;
