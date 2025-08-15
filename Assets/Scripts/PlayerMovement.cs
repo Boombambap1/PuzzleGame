@@ -78,6 +78,13 @@ public class Movement : MonoBehaviour
         dir.Normalize();
 
         IsMoving = true;
+        // foreach (var child in GetComponentsInChildren<Properties>()) // checks and moves children that are stacked on top
+        // {
+        //     if (child.TryMoveWithParent(dir, moveDistance))
+        //     {
+        //         child.GetComponent<MovableBlock>().Push(dir);
+        //     }
+        // }
         StartCoroutine(MovementUtils.TimedMovement(rb, dir, moveDistance, speed, () => IsMoving = false));
     }
 

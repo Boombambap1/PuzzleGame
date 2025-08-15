@@ -237,7 +237,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3265290575123797814, guid: b24b8acc4858a1f4a9608aae1a8ec2ba, type: 3}
       propertyPath: m_Name
-      value: Block (1)
+      value: Falling Block
+      objectReference: {fileID: 0}
+    - target: {fileID: 3265290575123797814, guid: b24b8acc4858a1f4a9608aae1a8ec2ba, type: 3}
+      propertyPath: m_TagString
+      value: Stickable
       objectReference: {fileID: 0}
     - target: {fileID: 3889792335703613281, guid: b24b8acc4858a1f4a9608aae1a8ec2ba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -557,7 +561,7 @@ GameObject:
   - component: {fileID: 1472300754}
   - component: {fileID: 1472300758}
   m_Layer: 0
-  m_Name: BasicBlock
+  m_Name: Platform
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

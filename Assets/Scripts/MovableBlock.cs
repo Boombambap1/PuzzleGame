@@ -20,6 +20,13 @@ public class MovableBlock : MonoBehaviour
         if (!IsMoving)
         {
             IsMoving = true;
+            // foreach (var child in GetComponentsInChildren<Properties>())
+            // {
+            //     if (child.TryMoveWithParent(direction, moveDistance))
+            //     {
+            //         child.GetComponent<MovableBlock>().Push(direction);
+            //     }
+            // }
             StartCoroutine(MovementUtils.TimedMovement(rb, direction, moveDistance, speed, () => IsMoving = false));
         }
     }
