@@ -237,7 +237,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3265290575123797814, guid: b24b8acc4858a1f4a9608aae1a8ec2ba, type: 3}
       propertyPath: m_Name
-      value: Falling Block
+      value: Block
       objectReference: {fileID: 0}
     - target: {fileID: 3265290575123797814, guid: b24b8acc4858a1f4a9608aae1a8ec2ba, type: 3}
       propertyPath: m_TagString
@@ -283,6 +283,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4334993171732951016, guid: b24b8acc4858a1f4a9608aae1a8ec2ba, type: 3}
+      propertyPath: m_IsKinematic
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -298,7 +302,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3265290575123797814, guid: b24b8acc4858a1f4a9608aae1a8ec2ba, type: 3}
       propertyPath: m_Name
-      value: Block
+      value: Falling Block
       objectReference: {fileID: 0}
     - target: {fileID: 3889792335703613281, guid: b24b8acc4858a1f4a9608aae1a8ec2ba, type: 3}
       propertyPath: m_LocalPosition.x
