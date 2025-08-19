@@ -1,18 +1,21 @@
 using UnityEngine;
+using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.SceneManagement;
 
 public class PauseMenu : MonoBehaviour
 {
     public GameObject pauseMenuUI;
-    public CameraBlurEffect blurEffect;
     public GameObject pauseButton;
+    private PostProcessVolume ppVolume;
 
     private bool isPaused = false;
 
     void Start()
     {
         pauseMenuUI.SetActive(false);
-        blurEffect.enabled = false;
+
+        ppVolume = Camera.main.gameObject.GetComponent<PostProcessVolume>();
+        ppVolume.enabled = false;
     }
 
     public void TogglePause()
@@ -26,7 +29,7 @@ public class PauseMenu : MonoBehaviour
     public void Resume()
     {
         pauseMenuUI.SetActive(false);
-        blurEffect.enabled = false;
+        ppVolume.enabled = false;
         pauseButton.SetActive(true);
         Time.timeScale = 1f;
         isPaused = false;
@@ -48,7 +51,7 @@ public class PauseMenu : MonoBehaviour
     private void Pause()
     {
         pauseMenuUI.SetActive(true);
-        blurEffect.enabled = true;
+        ppVolume.enabled = true;
         pauseButton.SetActive(false);
         Time.timeScale = 0f; // stops the game
         isPaused = true;
