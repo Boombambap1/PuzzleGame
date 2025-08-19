@@ -4,30 +4,57 @@ using UnityEngine;
 
 public class CameraMovement : MonoBehaviour
 {
-    public float moveSpeed = 1f;
+    public float moveSpeed = 5f;
     public float lookSensitivity = 1.5f;
     public float maxLookAngle = 90f;
 
-    private float yaw = 0f;
-    private float pitch = 0f;
+    public Vector3 cameraSpawn = new Vector3(-6, 15, -20);
+    public Vector3 cameraAngle = new Vector3(30, 15, 0);
+    public float fov = 20f;
+    private float pitch = 30f; // make sure to change this and yaw corresponding to the cameraAngle
+    private float yaw = 15f;
+
+    public float zoomSpeed = 10f;
+    public float minHeight = 8f;
+    public float maxHeight = 20f;
 
     void Start()
     {
-        Vector3 angles = transform.eulerAngles;
-        yaw = angles.y; // rotation about the vertical axis (turning left and right)
-        pitch = angles.x; // rotation about the horizontal axis (looking up and down)
+        transform.rotation = Quaternion.Euler(cameraAngle);
+
+        Camera cam = GetComponent<Camera>();
+        if (cam != null)
+            cam.fieldOfView = fov;
+
+        transform.position = cameraSpawn;
     }
 
     void Update()
     {
-        if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift) || Input.GetMouseButton(1))
-        {
-            HandleLook();
-            HandleMovement();
-        }
+        HandleMovement();
+        HandleLook();
+        HandleZoom();
     }
 
-    void HandleLook() // NOTE: this entire function is not needed if we're doing orthographic perspective
+    void HandleMovement()
+    {
+        if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+            return;
+
+        Vector3 input = new Vector3(
+            Input.GetAxisRaw("Horizontal"),
+            0f,
+            Input.GetAxisRaw("Vertical")
+        );
+
+        if (input.sqrMagnitude == 0f)
+            return;
+
+        Vector3 move = input.normalized * moveSpeed * Time.deltaTime;
+        transform.position += move;
+    }
+
+    void HandleLook()
     {
         if (Input.GetMouseButton(1)) // right mouse button
         {
@@ -50,15 +77,19 @@ public class CameraMovement : MonoBehaviour
         }
     }
 
-    void HandleMovement()
+    void HandleZoom()
     {
-        Vector3 input = new Vector3(
-            Input.GetAxisRaw("Horizontal"),
-            0f,
-            Input.GetAxisRaw("Vertical")
-        );
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
 
-        Vector3 move = transform.TransformDirection(input).normalized;
-        transform.position += moveSpeed * Time.deltaTime * move;
+        if (scroll == 0f)
+            return;
+
+        Vector3 move = transform.forward * scroll * zoomSpeed;
+        Vector3 nextPos = transform.position + move;
+
+        if (nextPos.y < minHeight || nextPos.y > maxHeight)
+            return;
+
+        transform.position = nextPos;
     }
 }
