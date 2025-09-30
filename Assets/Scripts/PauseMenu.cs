@@ -8,8 +8,6 @@ public class PauseMenu : MonoBehaviour
     public GameObject pauseButton;
     private PostProcessVolume ppVolume;
 
-    private bool isPaused = false;
-
     void Start()
     {
         pauseMenuUI.SetActive(false);
@@ -18,12 +16,12 @@ public class PauseMenu : MonoBehaviour
         ppVolume.enabled = false;
     }
 
-    public void TogglePause()
+    public void Pause()
     {
-        if (isPaused)
-            Resume();
-        else
-            Pause();
+        pauseMenuUI.SetActive(true);
+        ppVolume.enabled = true;
+        pauseButton.SetActive(false);
+        Time.timeScale = 0f; // stops the game
     }
 
     public void Resume()
@@ -32,7 +30,6 @@ public class PauseMenu : MonoBehaviour
         ppVolume.enabled = false;
         pauseButton.SetActive(true);
         Time.timeScale = 1f;
-        isPaused = false;
     }
 
     public void Restart()
@@ -46,14 +43,5 @@ public class PauseMenu : MonoBehaviour
         Time.timeScale = 1f;
         Debug.Log("quit game");
         Application.Quit();
-    }
-
-    private void Pause()
-    {
-        pauseMenuUI.SetActive(true);
-        ppVolume.enabled = true;
-        pauseButton.SetActive(false);
-        Time.timeScale = 0f; // stops the game
-        isPaused = true;
     }
 }
