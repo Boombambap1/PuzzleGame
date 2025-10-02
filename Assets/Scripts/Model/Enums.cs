@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public enum Direction { Backward, Forward, Left, Right }
-public class Enums : MonoBehaviour
+public enum GeoType
 {
-    // Start is called before the first frame update
+    None,
+    Wall,
+    Floor,
+    Obstacle
 }
