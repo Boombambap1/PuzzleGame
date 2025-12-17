@@ -6,11 +6,18 @@ public class PlayerInput : MonoBehaviour
     [Header("Input Settings")]
     public float inputCooldown = 0.1f;
     
+    [Header("Animation")]
+    public float moveSpeed = 5f; // Speed of smooth movement
+    
     private GamePhysics gamePhysics;
     private GameState gameState;
     private Object playerObject;
     private float lastInputTime;
     private bool isProcessingStep = false;
+    
+    // For smooth movement
+    private Vector3 visualPosition;
+    private bool isAnimating = false;
     
     void Start()
     {
@@ -36,6 +43,7 @@ public class PlayerInput : MonoBehaviour
         lastInputTime = -inputCooldown;
     }
     
+    
     /// <summary>
     /// Register this GameObject as the player in the game state
     /// </summary>
@@ -50,13 +58,55 @@ public class PlayerInput : MonoBehaviour
         // Register with game state
         gameState.PlaceObjectAt(playerObject, gridPos);
         
+        // Initialize visual position
+        visualPosition = transform.position;
+        
         Debug.Log($"Player registered at position: {gridPos}");
     }
     
     void Update()
     {
+        // FIRST: Handle smooth animation
+        if (playerObject != null)
+        {
+            Vector3 targetPos = playerObject.position;
+            float distance = Vector3.Distance(visualPosition, targetPos);
+            
+            if (distance > 0.01f)
+            {
+                // Animate towards target
+                float step = moveSpeed * Time.deltaTime;
+                Vector3 oldVisualPos = visualPosition;
+                visualPosition = Vector3.MoveTowards(visualPosition, targetPos, step);
+                transform.position = visualPosition;
+                isAnimating = true;
+                
+                Debug.Log($"[Animation] Frame {Time.frameCount}: {oldVisualPos:F3} -> {visualPosition:F3} (step: {step:F3}, dist remaining: {distance:F3})");
+            }
+            else
+            {
+                // Snap to final position
+                visualPosition = targetPos;
+                transform.position = targetPos;
+                
+                if (isAnimating)
+                {
+                    Debug.Log($"[Animation] Complete at frame {Time.frameCount}!");
+                    isAnimating = false;
+                }
+            }
+        }
+        
+        // SECOND: Handle input (only if not animating)
+        
         // Don't accept input if player not initialized
         if (playerObject == null || !playerObject.IsAlive())
+        {
+            return;
+        }
+        
+        // Don't accept input while animating
+        if (isAnimating)
         {
             return;
         }
@@ -103,7 +153,13 @@ public class PlayerInput : MonoBehaviour
     
     private void ProcessMovement(Direction direction)
     {
+        Vector3 visualPosBefore = visualPosition;
+        
         Debug.Log($"[PlayerInput] Processing input: {direction} from position {playerObject.position}");
+        Debug.Log($"[PlayerInput] Visual position before step: {visualPosition}");
+        
+        // Block further input
+        isProcessingStep = true;
         
         // Call the physics system
         List<TickData> stepData = gamePhysics.StartStep(direction);
@@ -111,9 +167,13 @@ public class PlayerInput : MonoBehaviour
         if (stepData != null && stepData.Count > 0)
         {
             Debug.Log($"[PlayerInput] Step completed with {stepData.Count} ticks");
+            Debug.Log($"[PlayerInput] Player now at: {playerObject.position}, visual still at: {visualPosition}");
             
-            // Update visual position to match game state
-            transform.position = playerObject.position;
+            // Check if visualPosition changed during physics
+            if (visualPosition != visualPosBefore)
+            {
+                Debug.LogError($"[PlayerInput] WARNING: visualPosition changed during physics! Was {visualPosBefore}, now {visualPosition}");
+            }
             
             // Log what happened
             foreach (TickData tick in stepData)
@@ -124,10 +184,14 @@ public class PlayerInput : MonoBehaviour
                     Debug.Log($"    {movement}");
                 }
             }
+            
+            // Animation will start in Update()
+            isProcessingStep = false;
         }
         else
         {
             Debug.Log("[PlayerInput] Movement blocked or invalid (stepData was null)");
+            isProcessingStep = false;
         }
     }
     
@@ -139,7 +203,8 @@ public class PlayerInput : MonoBehaviour
     {
         if (playerObject != null)
         {
-            transform.position = playerObject.position;
+            visualPosition = playerObject.position;
+            transform.position = visualPosition;
         }
     }
 }

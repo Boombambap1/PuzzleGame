@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -10,12 +11,15 @@ public class GeoBlock : MonoBehaviour
     [Tooltip("Type of geo block")]
     public GeoType blockType = GeoType.Block;
     
+    [Tooltip("Auto-register multiple positions based on scale")]
+    public bool useScale = true;
+    
     [Header("Debug")]
     public bool showGizmo = true;
     public Color gizmoColor = Color.white;
     
     private GeoState geoState;
-    private Vector3Int gridPosition;
+    private List<Vector3Int> occupiedPositions = new List<Vector3Int>();
     
     void Awake()
     {
@@ -28,30 +32,78 @@ public class GeoBlock : MonoBehaviour
             return;
         }
         
-        // Calculate grid position from world position
-        gridPosition = Vector3Int.RoundToInt(transform.position);
+        if (useScale)
+        {
+            // Register multiple positions based on scale
+            RegisterScaledBlock();
+        }
+        else
+        {
+            // Register single position
+            Vector3Int gridPos = Vector3Int.RoundToInt(transform.position);
+            geoState.PlaceGeoAt(gridPos, blockType);
+            occupiedPositions.Add(gridPos);
+            Debug.Log($"GeoBlock registered: {blockType} at {gridPos}");
+        }
+    }
+    
+    private void RegisterScaledBlock()
+    {
+        // Calculate the bounds based on position and scale
+        Vector3 scale = transform.localScale;
+        Vector3 center = transform.position;
         
-        // Register this block with GeoState
-        geoState.PlaceGeoAt(gridPosition, blockType);
+        Debug.Log($"[GeoBlock] Registering scaled block at {center} with scale {scale}");
         
-        Debug.Log($"GeoBlock registered: {blockType} at {gridPosition}");
+        // Calculate min and max grid positions
+        // Use floor/ceil to properly cover the area
+        Vector3 halfScale = scale / 2f;
+        Vector3Int minPos = new Vector3Int(
+            Mathf.FloorToInt(center.x - halfScale.x),
+            Mathf.FloorToInt(center.y - halfScale.y),
+            Mathf.FloorToInt(center.z - halfScale.z)
+        );
+        Vector3Int maxPos = new Vector3Int(
+            Mathf.CeilToInt(center.x + halfScale.x),
+            Mathf.CeilToInt(center.y + halfScale.y),
+            Mathf.CeilToInt(center.z + halfScale.z)
+        );
+        
+        Debug.Log($"[GeoBlock] Will register from {minPos} to {maxPos}");
+        
+        // Register all grid positions covered by this block
+        // Use <= for max to include the boundary
+        for (int x = minPos.x; x < maxPos.x; x++)
+        {
+            for (int y = minPos.y; y < maxPos.y; y++)
+            {
+                for (int z = minPos.z; z < maxPos.z; z++)
+                {
+                    Vector3Int gridPos = new Vector3Int(x, y, z);
+                    geoState.PlaceGeoAt(gridPos, blockType);
+                    occupiedPositions.Add(gridPos);
+                }
+            }
+        }
+        
+        Debug.Log($"[GeoBlock] Registered {occupiedPositions.Count} total positions");
     }
     
     void OnDestroy()
     {
-        // Unregister when destroyed (useful for editor)
+        // Unregister all occupied positions when destroyed
         if (geoState != null)
         {
-            geoState.RemoveGeoAt(gridPosition);
+            foreach (Vector3Int pos in occupiedPositions)
+            {
+                geoState.RemoveGeoAt(pos);
+            }
         }
     }
     
     void OnDrawGizmos()
     {
         if (!showGizmo) return;
-        
-        // Show the grid position this block occupies
-        Vector3Int pos = Vector3Int.RoundToInt(transform.position);
         
         // Color based on block type
         Color color = blockType switch
@@ -69,7 +121,33 @@ public class GeoBlock : MonoBehaviour
         }
         
         Gizmos.color = color;
-        Gizmos.DrawWireCube(pos, Vector3.one * 0.95f);
+        
+        if (useScale)
+        {
+            // Show all grid positions covered by this block
+            Vector3 scale = transform.localScale;
+            Vector3 center = transform.position;
+            Vector3Int minPos = Vector3Int.RoundToInt(center - scale / 2f);
+            Vector3Int maxPos = Vector3Int.RoundToInt(center + scale / 2f);
+            
+            for (int x = minPos.x; x < maxPos.x; x++)
+            {
+                for (int y = minPos.y; y < maxPos.y; y++)
+                {
+                    for (int z = minPos.z; z < maxPos.z; z++)
+                    {
+                        Vector3Int gridPos = new Vector3Int(x, y, z);
+                        Gizmos.DrawWireCube(gridPos, Vector3.one * 0.95f);
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Show single grid position
+            Vector3Int pos = Vector3Int.RoundToInt(transform.position);
+            Gizmos.DrawWireCube(pos, Vector3.one * 0.95f);
+        }
     }
     
     void OnDrawGizmosSelected()

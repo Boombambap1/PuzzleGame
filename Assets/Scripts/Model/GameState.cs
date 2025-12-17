@@ -163,10 +163,15 @@ public class GameState : MonoBehaviour
         
         Vector3Int belowPos = obj.position + Vector3Int.down;
         
+        Debug.Log($"[IsObjectInFreefall] Checking {obj.type} at {obj.position}, below is {belowPos}");
+        
         // Check if there's ground (geo) below
         GeoType geoBelow = geoState.GetGeoTypeAt(belowPos);
+        Debug.Log($"[IsObjectInFreefall] Geo below is: {geoBelow}");
+        
         if (geoBelow == GeoType.Block)
         {
+            Debug.Log($"[IsObjectInFreefall] Standing on Block, not in freefall");
             return false; // Standing on solid ground
         }
         
@@ -174,9 +179,11 @@ public class GameState : MonoBehaviour
         Object objBelow = GetObjectAt(belowPos);
         if (objBelow != null && objBelow.IsAlive())
         {
+            Debug.Log($"[IsObjectInFreefall] Standing on {objBelow.type}, not in freefall");
             return false; // Standing on another object
         }
         
+        Debug.Log($"[IsObjectInFreefall] Nothing below, IS in freefall");
         return true; // Nothing below, in freefall
     }
     

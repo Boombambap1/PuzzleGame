@@ -26,7 +26,16 @@ public class GamePhysics : MonoBehaviour
     
     void Start()
     {
-        // Apply initial gravity when scene loads
+        // Apply initial gravity after all objects register
+        Invoke("ApplyInitialGravity", 0.1f);
+    }
+    
+    /// <summary>
+    /// Apply initial gravity when scene loads
+    /// </summary>
+    private void ApplyInitialGravity()
+    {
+        Debug.Log("[GamePhysics] Applying initial gravity...");
         ApplyGravity();
     }
     
@@ -35,7 +44,18 @@ public class GamePhysics : MonoBehaviour
     /// </summary>
     public void ApplyGravity()
     {
-        Debug.Log("Applying gravity...");
+        Debug.Log("[GamePhysics] Applying gravity...");
+        
+        // Check what objects exist
+        List<Object> allObjects = gameState.GetAllObjects();
+        Debug.Log($"[GamePhysics] Found {allObjects.Count} objects to check for gravity");
+        
+        foreach (Object obj in allObjects)
+        {
+            bool inFreefall = gameState.IsObjectInFreefall(obj);
+            Debug.Log($"[GamePhysics] {obj.type} at {obj.position} - in freefall: {inFreefall}");
+        }
+        
         isProcessingStep = true;
         tickCount = 0;
         currentStepData.Clear();
@@ -55,12 +75,13 @@ public class GamePhysics : MonoBehaviour
             
             if (objectsFalling)
             {
+                Debug.Log($"[GamePhysics] Gravity tick {tickCount}: {tickData.movements.Count} objects fell");
                 currentStepData.Add(tickData);
             }
         }
         
         isProcessingStep = false;
-        Debug.Log($"Gravity applied - {currentStepData.Count} ticks of falling");
+        Debug.Log($"[GamePhysics] Gravity complete - {currentStepData.Count} ticks of falling");
     }
     
     /// <summary>
@@ -92,7 +113,10 @@ public class GamePhysics : MonoBehaviour
         Debug.Log($"[GamePhysics] Starting step - Player at {player.position}, moving {playerInput}");
         
         // Calculate target position
-        Vector3Int targetPos = player.position + DirectionToVector(playerInput);
+        Vector3Int moveVector = DirectionToVector(playerInput);
+        Debug.Log($"[GamePhysics] Move vector: {moveVector}");
+        
+        Vector3Int targetPos = player.position + moveVector;
         Debug.Log($"[GamePhysics] Target position: {targetPos}");
         
         // Check if move is valid (not into a wall or void)
@@ -142,6 +166,8 @@ public class GamePhysics : MonoBehaviour
             {
                 currentStepData.Add(tickData);
                 consecutiveEmptyTicks = 0;
+                
+                Debug.Log($"[Step] Tick {tickCount}: movement occurred");
             }
             else
             {
@@ -149,7 +175,7 @@ public class GamePhysics : MonoBehaviour
                 // Stable state reached - nothing moved for a full tick
                 if (consecutiveEmptyTicks >= 1)
                 {
-                    Debug.Log($"Stable state reached at tick {tickCount}");
+                    Debug.Log($"[Step] Stable state reached at tick {tickCount}");
                     break;
                 }
             }
@@ -157,7 +183,7 @@ public class GamePhysics : MonoBehaviour
         
         if (tickCount >= maxTicks)
         {
-            Debug.LogWarning("Max tick limit reached - possible softlock detected");
+            Debug.LogWarning("[Step] Max tick limit reached - possible softlock detected");
         }
     }
     
@@ -240,26 +266,41 @@ public class GamePhysics : MonoBehaviour
         bool anyFalling = false;
         List<Object> allObjects = gameState.GetAllObjects();
         
+        Debug.Log($"[ProcessFalling] Checking {allObjects.Count} objects");
+        
         foreach (Object obj in allObjects)
         {
-            if (!obj.IsAlive()) continue;
+            if (!obj.IsAlive())
+            {
+                Debug.Log($"[ProcessFalling] {obj.type} at {obj.position} is dead, skipping");
+                continue;
+            }
             
             // Check if object should fall
-            if (gameState.IsObjectInFreefall(obj))
+            bool inFreefall = gameState.IsObjectInFreefall(obj);
+            Debug.Log($"[ProcessFalling] {obj.type} at {obj.position} - in freefall: {inFreefall}");
+            
+            if (inFreefall)
             {
                 Vector3Int belowPos = obj.position + Vector3Int.down;
                 
                 // Check if below death bound
                 if (obj.position.y <= DEATH_BOUND)
                 {
+                    Debug.Log($"[ProcessFalling] {obj.type} below death bound, killing");
                     KillObject(obj, tickData);
                     anyFalling = true;
                 }
                 // Check if can fall
                 else if (IsValidMove(belowPos) && gameState.GetObjectAt(belowPos) == null)
                 {
+                    Debug.Log($"[ProcessFalling] {obj.type} falling from {obj.position} to {belowPos}");
                     MoveObject(obj, belowPos, TaskAction.Fall, tickData);
                     anyFalling = true;
+                }
+                else
+                {
+                    Debug.Log($"[ProcessFalling] {obj.type} can't fall - belowPos valid: {IsValidMove(belowPos)}, object below: {gameState.GetObjectAt(belowPos) != null}");
                 }
             }
         }
@@ -295,12 +336,14 @@ public class GamePhysics : MonoBehaviour
     }
     
     /// <summary>
-    /// Check if a position is valid for movement
+    /// Check if a position is valid for movement (not blocked by a wall)
     /// </summary>
     private bool IsValidMove(Vector3Int pos)
     {
         GeoType geoType = geoState.GetGeoTypeAt(pos);
-        return geoType != GeoType.Void && geoType != GeoType.Block;
+        // Can move into Void (empty space), Spawn, or Exit
+        // Cannot move into Block (solid wall)
+        return geoType != GeoType.Block;
     }
     
     /// <summary>
@@ -380,12 +423,12 @@ public class GamePhysics : MonoBehaviour
     {
         return dir switch
         {
-            Direction.Forward => Vector3Int.forward,
-            Direction.Backward => Vector3Int.back,
-            Direction.Left => Vector3Int.left,
-            Direction.Right => Vector3Int.right,
-            Direction.Up => Vector3Int.up,
-            Direction.Down => Vector3Int.down,
+            Direction.Forward => new Vector3Int(0, 0, 1),  // Z+1
+            Direction.Backward => new Vector3Int(0, 0, -1), // Z-1
+            Direction.Left => new Vector3Int(-1, 0, 0),     // X-1
+            Direction.Right => new Vector3Int(1, 0, 0),     // X+1
+            Direction.Up => new Vector3Int(0, 1, 0),        // Y+1
+            Direction.Down => new Vector3Int(0, -1, 0),     // Y-1
             _ => Vector3Int.zero
         };
     }
