@@ -43,41 +43,40 @@ public class GeoBlock : MonoBehaviour
             Vector3Int gridPos = Vector3Int.RoundToInt(transform.position);
             geoState.PlaceGeoAt(gridPos, blockType);
             occupiedPositions.Add(gridPos);
-            Debug.Log($"GeoBlock registered: {blockType} at {gridPos}");
         }
     }
     
     private void RegisterScaledBlock()
     {
-        // Calculate the bounds based on position and scale
-        Vector3 scale = transform.localScale;
-        Vector3 center = transform.position;
+        // Use Unity's built-in collision bounds - this is EXACTLY what Unity uses
+        MeshRenderer renderer = GetComponent<MeshRenderer>();
+        if (renderer == null)
+        {
+            Debug.LogError($"GeoBlock on {gameObject.name}: No MeshRenderer found! Cannot calculate bounds.");
+            return;
+        }
         
-        Debug.Log($"[GeoBlock] Registering scaled block at {center} with scale {scale}");
+        // Get the world-space bounds of the mesh
+        Bounds bounds = renderer.bounds;
         
-        // Calculate min and max grid positions
-        // Use floor/ceil to properly cover the area
-        Vector3 halfScale = scale / 2f;
+        // Calculate which grid cells are covered
         Vector3Int minPos = new Vector3Int(
-            Mathf.FloorToInt(center.x - halfScale.x),
-            Mathf.FloorToInt(center.y - halfScale.y),
-            Mathf.FloorToInt(center.z - halfScale.z)
+            Mathf.FloorToInt(bounds.min.x),
+            Mathf.FloorToInt(bounds.min.y),
+            Mathf.FloorToInt(bounds.min.z)
         );
         Vector3Int maxPos = new Vector3Int(
-            Mathf.CeilToInt(center.x + halfScale.x),
-            Mathf.CeilToInt(center.y + halfScale.y),
-            Mathf.CeilToInt(center.z + halfScale.z)
+            Mathf.CeilToInt(bounds.max.x) - 1,
+            Mathf.CeilToInt(bounds.max.y) - 1,
+            Mathf.CeilToInt(bounds.max.z) - 1
         );
         
-        Debug.Log($"[GeoBlock] Will register from {minPos} to {maxPos}");
-        
         // Register all grid positions covered by this block
-        // Use <= for max to include the boundary
-        for (int x = minPos.x; x < maxPos.x; x++)
+        for (int x = minPos.x; x <= maxPos.x; x++)
         {
-            for (int y = minPos.y; y < maxPos.y; y++)
+            for (int y = minPos.y; y <= maxPos.y; y++)
             {
-                for (int z = minPos.z; z < maxPos.z; z++)
+                for (int z = minPos.z; z <= maxPos.z; z++)
                 {
                     Vector3Int gridPos = new Vector3Int(x, y, z);
                     geoState.PlaceGeoAt(gridPos, blockType);
@@ -85,8 +84,6 @@ public class GeoBlock : MonoBehaviour
                 }
             }
         }
-        
-        Debug.Log($"[GeoBlock] Registered {occupiedPositions.Count} total positions");
     }
     
     void OnDestroy()
@@ -124,17 +121,28 @@ public class GeoBlock : MonoBehaviour
         
         if (useScale)
         {
-            // Show all grid positions covered by this block
-            Vector3 scale = transform.localScale;
-            Vector3 center = transform.position;
-            Vector3Int minPos = Vector3Int.RoundToInt(center - scale / 2f);
-            Vector3Int maxPos = Vector3Int.RoundToInt(center + scale / 2f);
+            // Use the same bounds calculation as RegisterScaledBlock
+            MeshRenderer renderer = GetComponent<MeshRenderer>();
+            if (renderer == null) return;
             
-            for (int x = minPos.x; x < maxPos.x; x++)
+            Bounds bounds = renderer.bounds;
+            
+            Vector3Int minPos = new Vector3Int(
+                Mathf.FloorToInt(bounds.min.x),
+                Mathf.FloorToInt(bounds.min.y),
+                Mathf.FloorToInt(bounds.min.z)
+            );
+            Vector3Int maxPos = new Vector3Int(
+                Mathf.CeilToInt(bounds.max.x) - 1,
+                Mathf.CeilToInt(bounds.max.y) - 1,
+                Mathf.CeilToInt(bounds.max.z) - 1
+            );
+            
+            for (int x = minPos.x; x <= maxPos.x; x++)
             {
-                for (int y = minPos.y; y < maxPos.y; y++)
+                for (int y = minPos.y; y <= maxPos.y; y++)
                 {
-                    for (int z = minPos.z; z < maxPos.z; z++)
+                    for (int z = minPos.z; z <= maxPos.z; z++)
                     {
                         Vector3Int gridPos = new Vector3Int(x, y, z);
                         Gizmos.DrawWireCube(gridPos, Vector3.one * 0.95f);

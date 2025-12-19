@@ -193,13 +193,11 @@ public class GamePhysics : MonoBehaviour
         {
             Debug.Log($"[ExecutePlayerMove] Found carried object: {carriedObject.type} at {carriedObject.position}");
         }
-        else
-        {
-            Debug.Log($"[ExecutePlayerMove] No carried object found");
-        }
         
-        // Check if we're pushing a box
+        // Check if we're pushing a box in front
         Object targetObject = gameState.GetObjectAt(targetPos);
+        
+        bool playerMoved = false;
         
         if (targetObject != null)
         {
@@ -213,19 +211,22 @@ public class GamePhysics : MonoBehaviour
                 
                 // Move player
                 MoveObject(player, targetPos, TaskAction.Move, tickData);
+                playerMoved = true;
             }
-            // If can't push, player doesn't move and neither does carried object
+            // If can't push, player doesn't move
         }
         else
         {
-            // Empty space, just move player
+            // Empty space in front, player can move
             MoveObject(player, targetPos, TaskAction.Move, tickData);
+            playerMoved = true;
         }
         
-        // AFTER player moved, move the carried object if there was one
-        if (carriedObject != null && carriedObject.IsAlive())
+        // AFTER player moved (or tried to move), handle the carried object
+        // The carried object tries to follow ONLY if the player actually moved
+        if (playerMoved && carriedObject != null && carriedObject.IsAlive())
         {
-            Debug.Log($"[ExecutePlayerMove] Now moving carried object");
+            Debug.Log($"[ExecutePlayerMove] Player moved, now trying to move carried object");
             MoveCarriedObjectDirect(carriedObject, direction, tickData);
         }
     }

@@ -256,7 +256,7 @@ GameObject:
   - component: {fileID: 526347643}
   - component: {fileID: 526347642}
   - component: {fileID: 526347641}
-  - component: {fileID: 526347640}
+  - component: {fileID: 526347645}
   m_Layer: 0
   m_Name: Cube (1)
   m_TagString: Untagged
@@ -264,22 +264,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &526347640
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 526347639}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 50460cbe6309f476cbf3ce1d21510a3f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  blockType: 1
-  useScale: 1
-  showGizmo: 1
-  gizmoColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!65 &526347641
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -360,12 +344,28 @@ Transform:
   m_GameObject: {fileID: 526347639}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 1, y: 3, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &526347645
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 526347639}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bff2f56fcb3f44a758e9f3b86a4bc19c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  boxColor: green
+  boxType: box
+  moveSpeed: 5
+  showGizmo: 1
 --- !u!1 &537396534
 GameObject:
   m_ObjectHideFlags: 0
@@ -513,7 +513,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   inputCooldown: 0.1
-  moveSpeed: 1
+  moveSpeed: 100
 --- !u!65 &1017041597
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -594,7 +594,7 @@ Transform:
   m_GameObject: {fileID: 1017041595}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 10, z: 0}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
