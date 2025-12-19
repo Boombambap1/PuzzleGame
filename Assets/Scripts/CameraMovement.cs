@@ -50,8 +50,10 @@ public class CameraMovement : MonoBehaviour
         if (input.sqrMagnitude == 0f)
             return;
 
-        Vector3 move = input.normalized * moveSpeed * Time.deltaTime;
-        transform.position += move;
+        // Move relative to camera's rotation
+        Vector3 moveDirection = transform.TransformDirection(input);
+        moveDirection.y = 0;
+        transform.position += moveDirection * moveSpeed * Time.deltaTime;
     }
 
     void HandleLook()
