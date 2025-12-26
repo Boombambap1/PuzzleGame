@@ -12,17 +12,37 @@ public class OptionsMenu : MonoBehaviour
     public Button keybindsButton;
     public Button mechanicsButton;
 
-    public Color unselectedButton = Color.white;
-    public Color selectedButton = new Color(200, 200, 200);
+    public Color unselectedButton = new Color(200, 200, 200);
+    public Color selectedButton = Color.white;
+
+
+    void SetButtonState(Button button, bool selected)
+    {
+        Image image = button.image;
+        Shadow shadow = button.GetComponent<Shadow>();
+
+        image.color = selected ? selectedButton : unselectedButton;
+        shadow.enabled = selected;
+
+        button.GetComponent<ButtonVisualState>().SetSelected(selected);
+    }
+
+    void Awake()
+    {
+        CloseMenu();
+        SetButtonState(settingsButton, false);
+        SetButtonState(keybindsButton, false);
+        SetButtonState(mechanicsButton, false);
+    }
 
     public void OpenSettingsMenu()
     {
         keybindsMenuUI.SetActive(false);
         mechanicsMenuUI.SetActive(false);
         settingsMenuUI.SetActive(true);
-        keybindsButton.image.color = unselectedButton;
-        mechanicsButton.image.color = unselectedButton;
-        settingsButton.image.color = selectedButton;
+        SetButtonState(keybindsButton, false);
+        SetButtonState(mechanicsButton, false);
+        SetButtonState(settingsButton, true);
     }
 
     public void OpenKeybindsMenu()
@@ -30,9 +50,9 @@ public class OptionsMenu : MonoBehaviour
         settingsMenuUI.SetActive(false);
         mechanicsMenuUI.SetActive(false);
         keybindsMenuUI.SetActive(true);
-        settingsButton.image.color = unselectedButton;
-        mechanicsButton.image.color = unselectedButton;
-        keybindsButton.image.color = selectedButton;
+        SetButtonState(settingsButton, false);
+        SetButtonState(mechanicsButton, false);
+        SetButtonState(keybindsButton, true);
     }
 
     public void OpenMechanicsMenu()
@@ -40,9 +60,9 @@ public class OptionsMenu : MonoBehaviour
         settingsMenuUI.SetActive(false);
         keybindsMenuUI.SetActive(false);
         mechanicsMenuUI.SetActive(true);
-        settingsButton.image.color = unselectedButton;
-        keybindsButton.image.color = unselectedButton;
-        mechanicsButton.image.color = selectedButton;
+        SetButtonState(settingsButton, false);
+        SetButtonState(keybindsButton, false);
+        SetButtonState(mechanicsButton, true);
     }
 
     public void CloseMenu()
