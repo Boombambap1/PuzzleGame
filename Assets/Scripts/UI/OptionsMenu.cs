@@ -12,8 +12,8 @@ public class OptionsMenu : MonoBehaviour
     public Button keybindsButton;
     public Button mechanicsButton;
 
-    public Color unselectedButton = new Color(200, 200, 200);
-    public Color selectedButton = Color.white;
+    [SerializeField] private Color unselectedButton = new Color(200, 200, 200);
+    [SerializeField] private Color selectedButton = Color.white;
 
 
     void SetButtonState(Button button, bool selected)
