@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// Attach this to any GameObject to register it as a pushable box in GameState
-/// The box will automatically register based on its world position and animate smoothly
-/// </summary>
 public class PushBlocks : MonoBehaviour
 {
     [Header("Box Settings")]
@@ -13,6 +9,9 @@ public class PushBlocks : MonoBehaviour
     [Tooltip("Type of box")]
     public string boxType = "box";
     
+    [Tooltip("Prefab reference for respawning (drag the prefab here)")]
+    public GameObject prefabReference;
+    
     [Header("Animation")]
     public float moveSpeed = 5f;
     
@@ -20,49 +19,51 @@ public class PushBlocks : MonoBehaviour
     public bool showGizmo = true;
     
     private GameState gameState;
-    private Object boxObject;
+    public Object boxObject;
     
-    // For smooth movement
     private Vector3 visualPosition;
     private bool isAnimating = false;
     
     void Start()
     {
-        // Find GameState in scene
         gameState = FindObjectOfType<GameState>();
-        
         if (gameState == null)
         {
             Debug.LogError($"PushBlocks on {gameObject.name}: GameState not found in scene!");
             return;
         }
         
-        // Calculate grid position from world position
         Vector3Int gridPosition = Vector3Int.RoundToInt(transform.position);
         
-        // Create the box Object
-        boxObject = new Object(boxColor, boxType, gridPosition, Direction.Forward);
+        // Use the manually assigned prefab reference
+        if (prefabReference == null)
+        {
+            Debug.LogWarning($"PushBlocks on {gameObject.name}: No prefab reference assigned! Respawn won't work.");
+        }
         
-        // Register with GameState
+        boxObject = new Object(boxColor, boxType, gridPosition, Direction.Forward, prefabReference);
         gameState.PlaceObjectAt(boxObject, gridPosition);
-        
-        // Initialize visual position
         visualPosition = transform.position;
         
-        Debug.Log($"PushBlock registered: {boxColor} {boxType} at {gridPosition}");
+        Debug.Log($"PushBlock registered: {boxColor} {boxType} at {gridPosition}, prefab: {(prefabReference != null ? prefabReference.name : "NONE")}");
     }
     
     void Update()
     {
-        // Smooth animation
         if (boxObject != null && boxObject.IsAlive())
         {
+            // Re-activate if was dead and now alive (respawn)
+            if (!gameObject.activeSelf)
+            {
+                gameObject.SetActive(true);
+                visualPosition = boxObject.position;
+            }
+            
             Vector3 targetPos = boxObject.position;
             float distance = Vector3.Distance(visualPosition, targetPos);
             
             if (distance > 0.01f)
             {
-                // Animate towards target
                 float step = moveSpeed * Time.deltaTime;
                 visualPosition = Vector3.MoveTowards(visualPosition, targetPos, step);
                 transform.position = visualPosition;
@@ -70,7 +71,6 @@ public class PushBlocks : MonoBehaviour
             }
             else
             {
-                // Snap to final position
                 visualPosition = targetPos;
                 transform.position = targetPos;
                 isAnimating = false;
@@ -78,14 +78,12 @@ public class PushBlocks : MonoBehaviour
         }
         else if (boxObject != null && !boxObject.IsAlive())
         {
-            // Hide or destroy visual if box is dead
             gameObject.SetActive(false);
         }
     }
     
     void OnDestroy()
     {
-        // Unregister when destroyed
         if (gameState != null && boxObject != null)
         {
             gameState.RemoveObjectAt(boxObject.position);
@@ -98,7 +96,6 @@ public class PushBlocks : MonoBehaviour
         
         Vector3Int pos = Vector3Int.RoundToInt(transform.position);
         
-        // Color based on box color
         Color gizmoColor = boxColor switch
         {
             "green" => Color.green,

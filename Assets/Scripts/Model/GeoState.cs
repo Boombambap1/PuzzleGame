@@ -6,8 +6,8 @@ public class GeoState : MonoBehaviour
     // Grid storage for immovable terrain
     private Dictionary<Vector3Int, GeoType> geoGrid;
     
-    // Spawn point tracking by color
-    private Dictionary<string, Vector3Int> spawnPoints;
+    // Spawn point tracking by prefab
+    private Dictionary<GameObject, Vector3Int> spawnPoints;
     
     void Awake()
     {
@@ -22,7 +22,7 @@ public class GeoState : MonoBehaviour
         }
         if (spawnPoints == null)
         {
-            spawnPoints = new Dictionary<string, Vector3Int>();
+            spawnPoints = new Dictionary<GameObject, Vector3Int>();
         }
     }
     
@@ -31,15 +31,8 @@ public class GeoState : MonoBehaviour
     /// </summary>
     public void PlaceGeoAt(Vector3Int pos, GeoType type)
     {
-        InitializeDictionaries(); // Ensure dictionaries exist
+        InitializeDictionaries();
         geoGrid[pos] = type;
-        
-        // Track spawn points
-        if (type == GeoType.Spawn)
-        {
-            // You can extend this to track color-specific spawns
-            // For now, using position as the key
-        }
     }
     
     /// <summary>
@@ -47,13 +40,13 @@ public class GeoState : MonoBehaviour
     /// </summary>
     public GeoType GetGeoTypeAt(Vector3Int pos)
     {
-        InitializeDictionaries(); // Ensure dictionaries exist
+        InitializeDictionaries();
         
         if (geoGrid.TryGetValue(pos, out GeoType type))
         {
             return type;
         }
-        return GeoType.Void; // Default to void if nothing placed
+        return GeoType.Void;
     }
     
     /// <summary>
@@ -61,7 +54,7 @@ public class GeoState : MonoBehaviour
     /// </summary>
     public void RemoveGeoAt(Vector3Int pos)
     {
-        InitializeDictionaries(); // Ensure dictionaries exist
+        InitializeDictionaries();
         
         if (geoGrid.ContainsKey(pos))
         {
@@ -74,7 +67,7 @@ public class GeoState : MonoBehaviour
     /// </summary>
     public void ClearAllGeo()
     {
-        InitializeDictionaries(); // Ensure dictionaries exist
+        InitializeDictionaries();
         geoGrid.Clear();
         spawnPoints.Clear();
     }
@@ -96,38 +89,31 @@ public class GeoState : MonoBehaviour
     }
     
     /// <summary>
-    /// Find spawn position for a specific color
+    /// Find spawn position for a specific prefab
     /// Returns null if no spawn point found
     /// </summary>
-    public Vector3Int? FindSpawnPosition(string color)
+    public Vector3Int? FindSpawnPosition(GameObject prefab)
     {
-        InitializeDictionaries(); // Ensure dictionaries exist
+        InitializeDictionaries();
         
-        if (spawnPoints.TryGetValue(color, out Vector3Int spawnPos))
+        if (spawnPoints.TryGetValue(prefab, out Vector3Int spawnPos))
         {
             return spawnPos;
         }
         
-        // If no color-specific spawn, find any spawn point
-        foreach (var kvp in geoGrid)
-        {
-            if (kvp.Value == GeoType.Spawn)
-            {
-                return kvp.Key;
-            }
-        }
-        
+        Debug.LogError($"[GeoState] No spawn point found for prefab '{prefab.name}'!");
         return null;
     }
     
     /// <summary>
-    /// Register a spawn point for a specific color
+    /// Register a spawn point for a specific prefab
+    /// Called by GeoBlocks with Spawn type
     /// </summary>
-    public void RegisterSpawnPoint(string color, Vector3Int position)
+    public void RegisterSpawnPoint(GameObject prefab, Vector3Int position)
     {
-        InitializeDictionaries(); // Ensure dictionaries exist
-        spawnPoints[color] = position;
-        PlaceGeoAt(position, GeoType.Spawn);
+        InitializeDictionaries();
+        spawnPoints[prefab] = position;
+        Debug.Log($"[GeoState] Registered spawn point for prefab '{prefab.name}' at {position}");
     }
     
     /// <summary>
@@ -135,7 +121,7 @@ public class GeoState : MonoBehaviour
     /// </summary>
     public void LoadLevel(GeoType[,,] levelData)
     {
-        InitializeDictionaries(); // Ensure dictionaries exist
+        InitializeDictionaries();
         ClearAllGeo();
         
         int sizeX = levelData.GetLength(0);

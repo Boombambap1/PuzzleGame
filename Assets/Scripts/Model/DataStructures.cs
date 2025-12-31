@@ -59,14 +59,18 @@ public class Object
     public Direction rotation;     // Horizontal direction it is facing
     public bool alive;             // Whether object is currently alive
     
+    // Prefab reference for respawning
+    public GameObject prefab;      // Reference to the original GameObject/prefab
+    
     // Constructor
-    public Object(string objectColor, string objectType, Vector3Int startPos, Direction startRotation = Direction.Forward)
+    public Object(string objectColor, string objectType, Vector3Int startPos, Direction startRotation = Direction.Forward, GameObject objectPrefab = null)
     {
         color = objectColor;
         type = objectType;
         position = startPos;
         rotation = startRotation;
         alive = true;
+        prefab = objectPrefab;
     }
     
     // Utility Methods

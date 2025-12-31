@@ -35,7 +35,6 @@ public class GamePhysics : MonoBehaviour
     /// </summary>
     private void ApplyInitialGravity()
     {
-        Debug.Log("[GamePhysics] Applying initial gravity...");
         ApplyGravity();
     }
     
@@ -85,7 +84,6 @@ public class GamePhysics : MonoBehaviour
         Object player = gameState.GetPlayer();
         if (player == null)
         {
-            Debug.LogError("[GamePhysics] Player not found!");
             return null;
         }
         
@@ -117,10 +115,35 @@ public class GamePhysics : MonoBehaviour
         // Process the rest of the step
         Step();
         
-        // Finish and return step data
+        // Finish step
         isProcessingStep = false;
         
+        // Check win conditions after step completes
+        CheckWinCondition();
+        
         return new List<TickData>(currentStepData);
+    }
+    
+    /// <summary>
+    /// Check if win conditions are met and trigger win event
+    /// </summary>
+    private void CheckWinCondition()
+    {
+        if (gameState.CheckWinConditions())
+        {
+            Debug.Log("========================================");
+            Debug.Log("===== LEVEL COMPLETE! =====");
+            Debug.Log("========================================");
+            OnLevelComplete();
+        }
+    }
+    
+    /// <summary>
+    /// Called when level is completed
+    /// </summary>
+    private void OnLevelComplete()
+    {
+        SendMessage("OnWinConditionMet", SendMessageOptions.DontRequireReceiver);
     }
     
     /// <summary>
@@ -128,7 +151,7 @@ public class GamePhysics : MonoBehaviour
     /// </summary>
     private void Step()
     {
-        int maxTicks = 100; // Safety limit to prevent infinite loops
+        int maxTicks = 100;
         int consecutiveEmptyTicks = 0;
         
         while (tickCount < maxTicks)
@@ -146,17 +169,11 @@ public class GamePhysics : MonoBehaviour
             else
             {
                 consecutiveEmptyTicks++;
-                // Stable state reached - nothing moved for a full tick
                 if (consecutiveEmptyTicks >= 1)
                 {
                     break;
                 }
             }
-        }
-        
-        if (tickCount >= maxTicks)
-        {
-            Debug.LogWarning("[Step] Max tick limit reached - possible softlock detected");
         }
     }
     
@@ -167,13 +184,8 @@ public class GamePhysics : MonoBehaviour
     {
         bool anyMovement = false;
         
-        // 1. Process box sliding (from being pushed)
         anyMovement |= ProcessBoxSliding(tickData);
-        
-        // 2. Process falling for all objects
         anyMovement |= ProcessFalling(tickData);
-        
-        // 3. Process respawning
         anyMovement |= ProcessRespawning(tickData);
         
         return anyMovement;
@@ -184,49 +196,31 @@ public class GamePhysics : MonoBehaviour
     /// </summary>
     private void ExecutePlayerMove(Object player, Direction direction, Vector3Int targetPos, TickData tickData)
     {
-        // FIRST: Check what the player is carrying BEFORE moving
         Vector3Int abovePlayerOldPos = player.position + Vector3Int.up;
         Object carriedObject = gameState.GetObjectAt(abovePlayerOldPos);
         
-        Debug.Log($"[ExecutePlayerMove] Player at {player.position}, checking for carried object at {abovePlayerOldPos}");
-        if (carriedObject != null)
-        {
-            Debug.Log($"[ExecutePlayerMove] Found carried object: {carriedObject.type} at {carriedObject.position}");
-        }
-        
-        // Check if we're pushing a box in front
         Object targetObject = gameState.GetObjectAt(targetPos);
-        
         bool playerMoved = false;
         
         if (targetObject != null)
         {
-            // Try to push the object
             Vector3Int pushTarget = targetPos + DirectionToVector(direction);
             
             if (CanPushObject(targetObject, pushTarget))
             {
-                // Push the object (and anything it's carrying)
                 PushObject(targetObject, direction, pushTarget, tickData);
-                
-                // Move player
                 MoveObject(player, targetPos, TaskAction.Move, tickData);
                 playerMoved = true;
             }
-            // If can't push, player doesn't move
         }
         else
         {
-            // Empty space in front, player can move
             MoveObject(player, targetPos, TaskAction.Move, tickData);
             playerMoved = true;
         }
         
-        // AFTER player moved (or tried to move), handle the carried object
-        // The carried object tries to follow ONLY if the player actually moved
         if (playerMoved && carriedObject != null && carriedObject.IsAlive())
         {
-            Debug.Log($"[ExecutePlayerMove] Player moved, now trying to move carried object");
             MoveCarriedObjectDirect(carriedObject, direction, tickData);
         }
     }
@@ -236,35 +230,19 @@ public class GamePhysics : MonoBehaviour
     /// </summary>
     private void MoveCarriedObjectDirect(Object carriedObject, Direction direction, TickData tickData)
     {
-        Debug.Log($"[MoveCarriedDirect] Moving {carriedObject.type} from {carriedObject.position}");
+        Vector3Int aboveCarriedOldPos = carriedObject.position + Vector3Int.up;
+        Object nextCarried = gameState.GetObjectAt(aboveCarriedOldPos);
         
-        // Calculate target position for carried object (same direction as carrier moved)
         Vector3Int carriedTarget = carriedObject.position + DirectionToVector(direction);
         
-        Debug.Log($"[MoveCarriedDirect] Target: {carriedTarget}");
-        
-        // Check if the carried object can move there
         if (CanMoveCarriedObject(carriedObject, carriedTarget))
         {
-            Debug.Log($"[MoveCarriedDirect] Move successful");
-            
-            // Move the carried object
             MoveObject(carriedObject, carriedTarget, TaskAction.Move, tickData);
-            
-            // Recursively check if THIS object is carrying something
-            Vector3Int aboveCarried = carriedObject.position + Vector3Int.up;
-            Object nextCarried = gameState.GetObjectAt(aboveCarried);
             
             if (nextCarried != null && nextCarried.IsAlive())
             {
-                Debug.Log($"[MoveCarriedDirect] Found stacked object, moving it too");
                 MoveCarriedObjectDirect(nextCarried, direction, tickData);
             }
-        }
-        else
-        {
-            Debug.Log($"[MoveCarriedDirect] Blocked - object stays at {carriedObject.position}");
-            // Object stays where it is - will fall next tick if no support
         }
     }
     
@@ -276,14 +254,11 @@ public class GamePhysics : MonoBehaviour
         bool anySliding = false;
         List<Object> allObjects = gameState.GetAllObjects();
         
-        // Process each box
         foreach (Object obj in allObjects)
         {
             if (obj.type == "box" && obj.IsAlive())
             {
-                // Check if box has momentum (was pushed last tick)
-                // For now, boxes only move when initially pushed, not continuously
-                // You can extend this for sliding mechanics later
+                // Future: sliding mechanics
             }
         }
         
@@ -302,20 +277,17 @@ public class GamePhysics : MonoBehaviour
         {
             if (!obj.IsAlive()) continue;
             
-            // Check if object should fall
             bool inFreefall = gameState.IsObjectInFreefall(obj);
             
             if (inFreefall)
             {
                 Vector3Int belowPos = obj.position + Vector3Int.down;
                 
-                // Check if below death bound
                 if (obj.position.y <= DEATH_BOUND)
                 {
                     KillObject(obj, tickData);
                     anyFalling = true;
                 }
-                // Check if can fall
                 else if (IsValidMove(belowPos) && gameState.GetObjectAt(belowPos) == null)
                 {
                     MoveObject(obj, belowPos, TaskAction.Fall, tickData);
@@ -335,18 +307,37 @@ public class GamePhysics : MonoBehaviour
         bool anyRespawning = false;
         List<Object> allObjects = gameState.GetAllObjects();
         
+        Debug.Log($"[ProcessRespawning] Checking {allObjects.Count} objects");
+        
         foreach (Object obj in allObjects)
         {
+            Debug.Log($"[Respawn Check] {obj.color} {obj.type}, alive: {obj.alive}, prefab: {(obj.prefab != null ? obj.prefab.name : "NULL")}");
+            
             if (!obj.IsAlive() && obj.type == "box")
             {
-                // Find spawn position for this object's color
-                Vector3Int? spawnPos = geoState.FindSpawnPosition(obj.color);
+                if (obj.prefab == null)
+                {
+                    Debug.LogWarning($"[Respawn] {obj.color} box has no prefab reference!");
+                    continue;
+                }
+                
+                Vector3Int? spawnPos = geoState.FindSpawnPosition(obj.prefab);
                 
                 if (spawnPos.HasValue)
                 {
-                    Vector3Int respawnPosition = new Vector3Int(spawnPos.Value.x, RESPAWN_HEIGHT, spawnPos.Value.z);
+                    Vector3Int respawnPosition = new Vector3Int(
+                        spawnPos.Value.x, 
+                        spawnPos.Value.y + RESPAWN_HEIGHT, 
+                        spawnPos.Value.z
+                    );
+                    
+                    Debug.Log($"[Respawn] Respawning {obj.color} box at {respawnPosition}");
                     RespawnObject(obj, respawnPosition, tickData);
                     anyRespawning = true;
+                }
+                else
+                {
+                    Debug.LogWarning($"[Respawn] No spawn point for prefab '{obj.prefab.name}'");
                 }
             }
         }
@@ -360,8 +351,6 @@ public class GamePhysics : MonoBehaviour
     private bool IsValidMove(Vector3Int pos)
     {
         GeoType geoType = geoState.GetGeoTypeAt(pos);
-        // Can move into Void (empty space), Spawn, or Exit
-        // Cannot move into Block (solid wall)
         return geoType != GeoType.Block;
     }
     
@@ -370,32 +359,25 @@ public class GamePhysics : MonoBehaviour
     /// </summary>
     private bool CanPushObject(Object obj, Vector3Int targetPos)
     {
-        // Check if target is valid and empty
         if (!IsValidMove(targetPos)) return false;
         if (gameState.GetObjectAt(targetPos) != null) return false;
-        
         return true;
     }
     
     /// <summary>
     /// Check if a carried object can move to target position
-    /// Similar to CanPushObject but for carried objects
     /// </summary>
     private bool CanMoveCarriedObject(Object obj, Vector3Int targetPos)
     {
-        // Check if target has a solid block (GeoBlock)
         GeoType geoAtTarget = geoState.GetGeoTypeAt(targetPos);
         if (geoAtTarget == GeoType.Block)
         {
-            Debug.Log($"[CanMoveCarried] Blocked by GeoBlock at {targetPos}");
             return false;
         }
         
-        // Check if there's another object at target
         Object objectAtTarget = gameState.GetObjectAt(targetPos);
         if (objectAtTarget != null && objectAtTarget.IsAlive())
         {
-            Debug.Log($"[CanMoveCarried] Blocked by {objectAtTarget.type} at {targetPos}");
             return false;
         }
         
@@ -407,14 +389,11 @@ public class GamePhysics : MonoBehaviour
     /// </summary>
     private void PushObject(Object obj, Direction direction, Vector3Int targetPos, TickData tickData)
     {
-        // Check what this object is carrying BEFORE moving
         Vector3Int aboveObjOldPos = obj.position + Vector3Int.up;
         Object carriedByPushed = gameState.GetObjectAt(aboveObjOldPos);
         
-        // Move the pushed object
         MoveObject(obj, targetPos, TaskAction.Slide, tickData);
         
-        // Move anything it was carrying
         if (carriedByPushed != null && carriedByPushed.IsAlive())
         {
             MoveCarriedObjectDirect(carriedByPushed, direction, tickData);
@@ -428,14 +407,11 @@ public class GamePhysics : MonoBehaviour
     {
         Vector3Int fromPos = obj.position;
         
-        // Update game state
         gameState.MoveObjectTo(obj, targetPos);
         
-        // Record movement
         ObjectMovement movement = new ObjectMovement(obj, fromPos, targetPos, actionType);
         tickData.movements.Add(movement);
         
-        // Record task
         Direction moveDir = VectorToDirection(targetPos - fromPos);
         Task task = new Task(obj.color, actionType, moveDir);
         tickData.tasks.Add(task);
@@ -478,12 +454,12 @@ public class GamePhysics : MonoBehaviour
     {
         return dir switch
         {
-            Direction.Forward => new Vector3Int(0, 0, 1),  // Z+1
-            Direction.Backward => new Vector3Int(0, 0, -1), // Z-1
-            Direction.Left => new Vector3Int(-1, 0, 0),     // X-1
-            Direction.Right => new Vector3Int(1, 0, 0),     // X+1
-            Direction.Up => new Vector3Int(0, 1, 0),        // Y+1
-            Direction.Down => new Vector3Int(0, -1, 0),     // Y-1
+            Direction.Forward => new Vector3Int(0, 0, 1),
+            Direction.Backward => new Vector3Int(0, 0, -1),
+            Direction.Left => new Vector3Int(-1, 0, 0),
+            Direction.Right => new Vector3Int(1, 0, 0),
+            Direction.Up => new Vector3Int(0, 1, 0),
+            Direction.Down => new Vector3Int(0, -1, 0),
             _ => Vector3Int.zero
         };
     }

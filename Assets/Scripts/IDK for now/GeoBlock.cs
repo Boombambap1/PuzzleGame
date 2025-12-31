@@ -11,17 +11,25 @@ public class GeoBlock : MonoBehaviour
     [Tooltip("Type of geo block")]
     public GeoType blockType = GeoType.Block;
     
+    [Tooltip("For Exit blocks: which color box should reach this exit")]
+    public string exitColor = "none";
+    
+    [Tooltip("For Spawn blocks: which box prefab to spawn here")]
+    public GameObject spawnPrefab = null;
+    
     [Header("Debug")]
     public bool showGizmo = true;
     public Color gizmoColor = Color.white;
     
     private GeoState geoState;
+    private GameState gameState;
     private Vector3Int occupiedPosition;
     
     void Awake()
     {
         // Find GeoState in scene
         geoState = FindObjectOfType<GeoState>();
+        gameState = FindObjectOfType<GameState>();
         
         if (geoState == null)
         {
@@ -45,7 +53,29 @@ public class GeoBlock : MonoBehaviour
         // Register this single position
         geoState.PlaceGeoAt(occupiedPosition, blockType);
         
-        Debug.Log($"GeoBlock '{gameObject.name}': Registered {blockType} at {occupiedPosition}");
+        // If this is an Exit block, register it as a win condition
+        if (blockType == GeoType.Exit && gameState != null)
+        {
+            gameState.RegisterWinCondition(exitColor, occupiedPosition);
+            Debug.Log($"GeoBlock '{gameObject.name}': Registered {exitColor} Exit at {occupiedPosition}");
+        }
+        // If this is a Spawn block, register it as a spawn point
+        else if (blockType == GeoType.Spawn && geoState != null)
+        {
+            if (spawnPrefab != null)
+            {
+                geoState.RegisterSpawnPoint(spawnPrefab, occupiedPosition);
+                Debug.Log($"GeoBlock '{gameObject.name}': Registered Spawn for {spawnPrefab.name} at {occupiedPosition}");
+            }
+            else
+            {
+                Debug.LogWarning($"GeoBlock '{gameObject.name}': Spawn block has no prefab assigned!");
+            }
+        }
+        else
+        {
+            Debug.Log($"GeoBlock '{gameObject.name}': Registered {blockType} at {occupiedPosition}");
+        }
     }
     
     void OnDestroy()
@@ -65,8 +95,8 @@ public class GeoBlock : MonoBehaviour
         Color color = blockType switch
         {
             GeoType.Block => Color.white,
-            GeoType.Spawn => Color.green,
-            GeoType.Exit => Color.cyan,
+            GeoType.Spawn => GetSpawnColor(),
+            GeoType.Exit => GetExitColor(),
             GeoType.Void => Color.red,
             _ => Color.gray
         };
@@ -85,7 +115,15 @@ public class GeoBlock : MonoBehaviour
             Mathf.RoundToInt(transform.position.z)
         );
         
+        // Draw wire cube
         Gizmos.DrawWireCube(gridPos, Vector3.one * 0.95f);
+        
+        // If it's an exit or spawn, draw a filled cube inside to make it more visible
+        if (blockType == GeoType.Exit || blockType == GeoType.Spawn)
+        {
+            Gizmos.color = new Color(color.r, color.g, color.b, 0.3f);
+            Gizmos.DrawCube(gridPos, Vector3.one * 0.7f);
+        }
     }
     
     void OnDrawGizmosSelected()
@@ -99,5 +137,48 @@ public class GeoBlock : MonoBehaviour
         
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(pos, Vector3.one);
+    }
+    
+    /// <summary>
+    /// Get color for exit blocks based on exitColor field
+    /// </summary>
+    private Color GetExitColor()
+    {
+        return exitColor.ToLower() switch
+        {
+            "red" => Color.red,
+            "green" => Color.green,
+            "blue" => Color.blue,
+            "yellow" => Color.yellow,
+            "cyan" => Color.cyan,
+            "magenta" => Color.magenta,
+            _ => Color.cyan // Default exit color
+        };
+    }
+    
+    /// <summary>
+    /// Get color for spawn blocks based on assigned prefab
+    /// </summary>
+    private Color GetSpawnColor()
+    {
+        if (spawnPrefab != null)
+        {
+            // Try to get color from the prefab's PushBlocks component
+            PushBlocks pushBlock = spawnPrefab.GetComponent<PushBlocks>();
+            if (pushBlock != null)
+            {
+                return pushBlock.boxColor.ToLower() switch  // Changed from .color to .boxColor
+                {
+                    "red" => Color.red,
+                    "green" => Color.green,
+                    "blue" => Color.blue,
+                    "yellow" => Color.yellow,
+                    "cyan" => Color.cyan,
+                    "magenta" => Color.magenta,
+                    _ => Color.green
+                };
+            }
+        }
+        return Color.green; // Default spawn color
     }
 }

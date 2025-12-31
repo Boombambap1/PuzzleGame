@@ -169,10 +169,11 @@ public class GameState : MonoBehaviour
         GeoType geoBelow = geoState.GetGeoTypeAt(belowPos);
         Debug.Log($"[IsObjectInFreefall] Geo below is: {geoBelow}");
         
-        if (geoBelow == GeoType.Block)
+        // Block, Exit, and Spawn all provide support (act as solid ground)
+        if (geoBelow == GeoType.Block || geoBelow == GeoType.Exit || geoBelow == GeoType.Spawn)
         {
-            Debug.Log($"[IsObjectInFreefall] Standing on Block, not in freefall");
-            return false; // Standing on solid ground
+            Debug.Log($"[IsObjectInFreefall] Standing on {geoBelow}, not in freefall");
+            return false; // Standing on solid ground, exit, or spawn
         }
         
         // Check if there's an object below
@@ -220,55 +221,100 @@ public class GameState : MonoBehaviour
     }
     
     /// <summary>
-    /// Set win conditions for a level
-    /// Example: green boxes must be at specific positions
+    /// Register a win condition: a box of this color must reach this position
+    /// Called by GeoBlocks with Exit type
     /// </summary>
-    public void SetWinCondition(string color, List<Vector3Int> requiredPositions)
+    public void RegisterWinCondition(string color, Vector3Int position)
     {
-        winConditions[color] = requiredPositions;
+        InitializeDictionaries();
+        
+        if (!winConditions.ContainsKey(color))
+        {
+            winConditions[color] = new List<Vector3Int>();
+        }
+        
+        winConditions[color].Add(position);
+        Debug.Log($"[GameState] Registered win condition: {color} box must reach {position}");
     }
     
     /// <summary>
-    /// Check if the current state is a winning state
+    /// Check if all win conditions are satisfied
+    /// Returns true only if ALL boxes are at their correct exit positions
     /// </summary>
-    public bool IsWinningState()
+    public bool CheckWinConditions()
     {
-        // Check if player is at an exit
-        if (player != null && player.IsAlive())
+        InitializeDictionaries();
+        
+        if (winConditions.Count == 0)
         {
-            GeoType playerGeo = geoState.GetGeoTypeAt(player.position);
-            if (playerGeo == GeoType.Exit)
-            {
-                // If there are no other win conditions, player reaching exit is enough
-                if (winConditions.Count == 0)
-                {
-                    return true;
-                }
-            }
+            // No win conditions defined
+            Debug.Log("[WinCheck] No win conditions registered");
+            return false;
         }
         
-        // Check color-based win conditions
-        foreach (var condition in winConditions)
+        Debug.Log($"[WinCheck] Checking {winConditions.Count} color groups...");
+        
+        // Check each color's win conditions
+        foreach (var kvp in winConditions)
         {
-            string color = condition.Key;
-            List<Vector3Int> requiredPositions = condition.Value;
+            string requiredColor = kvp.Key;
+            List<Vector3Int> requiredPositions = kvp.Value;
             
-            // Find all objects of this color
-            List<Object> colorObjects = allObjects.FindAll(obj => 
-                obj.color == color && obj.IsAlive());
+            Debug.Log($"[WinCheck] Checking {requiredColor}: needs {requiredPositions.Count} positions");
             
-            // Check if all required positions have the correct colored object
-            foreach (Vector3Int pos in requiredPositions)
+            // For each required position (exit block position), check one block ABOVE it
+            foreach (Vector3Int exitPos in requiredPositions)
             {
-                Object objAtPos = GetObjectAt(pos);
-                if (objAtPos == null || objAtPos.color != color || !objAtPos.IsAlive())
+                // Check the position ABOVE the exit block (where the box would be standing)
+                Vector3Int checkPos = exitPos + Vector3Int.up;
+                Object objAtPosition = GetObjectAt(checkPos);
+                
+                // Check if there's an object at this position
+                if (objAtPosition == null)
                 {
+                    Debug.Log($"[WinCheck] ✗ No object at {checkPos} above exit {exitPos} (need {requiredColor})");
                     return false;
                 }
+                
+                // Check if it's alive
+                if (!objAtPosition.IsAlive())
+                {
+                    Debug.Log($"[WinCheck] ✗ Dead object at {checkPos} (need {requiredColor})");
+                    return false;
+                }
+                
+                // Check if it's a box
+                if (objAtPosition.type != "box")
+                {
+                    Debug.Log($"[WinCheck] ✗ Wrong type at {checkPos}: {objAtPosition.type} (need box)");
+                    return false;
+                }
+                
+                // Check if it's the correct color
+                if (objAtPosition.color != requiredColor)
+                {
+                    Debug.Log($"[WinCheck] ✗ Wrong color at {checkPos}: {objAtPosition.color} (need {requiredColor})");
+                    return false;
+                }
+                
+                Debug.Log($"[WinCheck] ✓ Correct {requiredColor} box at {checkPos} (above exit at {exitPos})");
             }
         }
         
-        return winConditions.Count > 0; // Only return true if there were conditions to check
+        // All win conditions satisfied!
+        Debug.Log("========================================");
+        Debug.Log("[WinCheck] ✓✓✓ ALL WIN CONDITIONS SATISFIED! ✓✓✓");
+        Debug.Log("========================================");
+        return true;
+    }
+    
+    /// <summary>
+    /// Get all win condition positions (for debugging/visualization)
+    /// </summary>
+    public Dictionary<string, List<Vector3Int>> GetWinConditions()
+    {
+        InitializeDictionaries();
+        return winConditions;
     }
     
     /// <summary>

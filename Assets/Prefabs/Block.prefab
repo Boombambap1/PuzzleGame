@@ -94,7 +94,7 @@ GameObject:
   - component: {fileID: 3889792335703613281}
   - component: {fileID: 9002893712280355876}
   - component: {fileID: 4334993171732951016}
-  - component: {fileID: 3360285573216093412}
+  - component: {fileID: 9194900520129102800}
   m_Layer: 0
   m_Name: Block
   m_TagString: Untagged
@@ -111,7 +111,7 @@ Transform:
   m_GameObject: {fileID: 3265290575123797814}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalPosition: {x: 1, y: 2, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -166,7 +166,7 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &3360285573216093412
+--- !u!114 &9194900520129102800
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -175,8 +175,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 3265290575123797814}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5bbbc6915e237ea408a94451c8436c65, type: 3}
+  m_Script: {fileID: 11500000, guid: bff2f56fcb3f44a758e9f3b86a4bc19c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 5
-  moveDistance: 1
+  boxColor: red
+  boxType: box
+  prefabReference: {fileID: 3265290575123797814}
+  moveSpeed: 100
+  showGizmo: 1
+  boxObject:
+    color: 
+    type: 
+    position: {x: 0, y: 0, z: 0}
+    rotation: 0
+    alive: 0
+    prefab: {fileID: 0}
