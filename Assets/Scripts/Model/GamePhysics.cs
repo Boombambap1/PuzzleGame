@@ -313,11 +313,12 @@ public class GamePhysics : MonoBehaviour
         {
             Debug.Log($"[Respawn Check] {obj.color} {obj.type}, alive: {obj.alive}, prefab: {(obj.prefab != null ? obj.prefab.name : "NULL")}");
             
-            if (!obj.IsAlive() && obj.type == "box")
+            // Check if object is dead and can respawn (boxes or player)
+            if (!obj.IsAlive() && (obj.type == "box" || obj.type == "robot"))
             {
                 if (obj.prefab == null)
                 {
-                    Debug.LogWarning($"[Respawn] {obj.color} box has no prefab reference!");
+                    Debug.LogWarning($"[Respawn] {obj.type} has no prefab reference!");
                     continue;
                 }
                 
@@ -331,7 +332,7 @@ public class GamePhysics : MonoBehaviour
                         spawnPos.Value.z
                     );
                     
-                    Debug.Log($"[Respawn] Respawning {obj.color} box at {respawnPosition}");
+                    Debug.Log($"[Respawn] Respawning {obj.type} at {respawnPosition}");
                     RespawnObject(obj, respawnPosition, tickData);
                     anyRespawning = true;
                 }

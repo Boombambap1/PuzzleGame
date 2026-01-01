@@ -9,6 +9,10 @@ public class PlayerInput : MonoBehaviour
     [Header("Animation")]
     public float moveSpeed = 5f;
     
+    [Header("Respawn")]
+    [Tooltip("Prefab reference for respawning (drag the player prefab here)")]
+    public GameObject prefabReference;
+    
     private GamePhysics gamePhysics;
     private GameState gameState;
     private Object playerObject;
@@ -41,7 +45,13 @@ public class PlayerInput : MonoBehaviour
     private void RegisterPlayer()
     {
         Vector3Int gridPos = Vector3Int.RoundToInt(transform.position);
-        playerObject = new Object("none", "robot", gridPos, Direction.Forward, gameObject);
+        
+        if (prefabReference == null)
+        {
+            Debug.LogWarning("PlayerInput: No prefab reference assigned! Respawn won't work.");
+        }
+        
+        playerObject = new Object("none", "robot", gridPos, Direction.Forward, prefabReference);
         gameState.PlaceObjectAt(playerObject, gridPos);
         visualPosition = transform.position;
     }
@@ -50,6 +60,13 @@ public class PlayerInput : MonoBehaviour
     {
         if (playerObject != null)
         {
+            // Re-activate if was dead and now alive (respawn)
+            if (playerObject.IsAlive() && !gameObject.activeSelf)
+            {
+                gameObject.SetActive(true);
+                visualPosition = playerObject.position;
+            }
+            
             Vector3 targetPos = playerObject.position;
             float distance = Vector3.Distance(visualPosition, targetPos);
             
@@ -65,6 +82,12 @@ public class PlayerInput : MonoBehaviour
                 visualPosition = targetPos;
                 transform.position = targetPos;
                 isAnimating = false;
+            }
+            
+            // Hide player if dead
+            if (!playerObject.IsAlive() && gameObject.activeSelf)
+            {
+                gameObject.SetActive(false);
             }
         }
         
