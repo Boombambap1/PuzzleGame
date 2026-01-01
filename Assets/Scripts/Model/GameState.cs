@@ -11,8 +11,8 @@ public class GameState : MonoBehaviour
     // Reference to GeoState for ground checks
     private GeoState geoState;
     
-    // Win conditions (can be set per level)
-    private Dictionary<string, List<Vector3Int>> winConditions;
+    // Win conditions (can be set per level) - NOW USES PREFABS
+    private Dictionary<GameObject, List<Vector3Int>> winConditions;
     
     void Awake()
     {
@@ -37,7 +37,7 @@ public class GameState : MonoBehaviour
         }
         if (winConditions == null)
         {
-            winConditions = new Dictionary<string, List<Vector3Int>>();
+            winConditions = new Dictionary<GameObject, List<Vector3Int>>();
         }
     }
     
@@ -46,9 +46,8 @@ public class GameState : MonoBehaviour
     /// </summary>
     public void PlaceObjectAt(Object obj, Vector3Int pos)
     {
-        InitializeDictionaries(); // Ensure dictionaries exist
+        InitializeDictionaries();
         
-        // Remove from old position if it exists
         if (objectGrid.ContainsValue(obj))
         {
             RemoveObjectAt(obj.position);
@@ -62,7 +61,6 @@ public class GameState : MonoBehaviour
             allObjects.Add(obj);
         }
         
-        // Track player
         if (obj.type == "robot")
         {
             player = obj;
@@ -91,16 +89,12 @@ public class GameState : MonoBehaviour
     /// </summary>
     public void MoveObjectTo(Object obj, Vector3Int newPos)
     {
-        // Remove from old position
         if (objectGrid.ContainsKey(obj.position))
         {
             objectGrid.Remove(obj.position);
         }
         
-        // Update position
         obj.position = newPos;
-        
-        // Place at new position
         objectGrid[newPos] = obj;
     }
     
@@ -165,27 +159,24 @@ public class GameState : MonoBehaviour
         
         Debug.Log($"[IsObjectInFreefall] Checking {obj.type} at {obj.position}, below is {belowPos}");
         
-        // Check if there's ground (geo) below
         GeoType geoBelow = geoState.GetGeoTypeAt(belowPos);
         Debug.Log($"[IsObjectInFreefall] Geo below is: {geoBelow}");
         
-        // Block, Exit, and Spawn all provide support (act as solid ground)
         if (geoBelow == GeoType.Block || geoBelow == GeoType.Exit || geoBelow == GeoType.Spawn)
         {
             Debug.Log($"[IsObjectInFreefall] Standing on {geoBelow}, not in freefall");
-            return false; // Standing on solid ground, exit, or spawn
+            return false;
         }
         
-        // Check if there's an object below
         Object objBelow = GetObjectAt(belowPos);
         if (objBelow != null && objBelow.IsAlive())
         {
             Debug.Log($"[IsObjectInFreefall] Standing on {objBelow.type}, not in freefall");
-            return false; // Standing on another object
+            return false;
         }
         
         Debug.Log($"[IsObjectInFreefall] Nothing below, IS in freefall");
-        return true; // Nothing below, in freefall
+        return true;
     }
     
     /// <summary>
@@ -221,25 +212,25 @@ public class GameState : MonoBehaviour
     }
     
     /// <summary>
-    /// Register a win condition: a box of this color must reach this position
+    /// Register a win condition: this prefab must reach this position
     /// Called by GeoBlocks with Exit type
     /// </summary>
-    public void RegisterWinCondition(string color, Vector3Int position)
+    public void RegisterWinCondition(GameObject prefab, Vector3Int position)
     {
         InitializeDictionaries();
         
-        if (!winConditions.ContainsKey(color))
+        if (!winConditions.ContainsKey(prefab))
         {
-            winConditions[color] = new List<Vector3Int>();
+            winConditions[prefab] = new List<Vector3Int>();
         }
         
-        winConditions[color].Add(position);
-        Debug.Log($"[GameState] Registered win condition: {color} box must reach {position}");
+        winConditions[prefab].Add(position);
+        Debug.Log($"[GameState] Registered win condition: {prefab.name} must reach {position}");
     }
     
     /// <summary>
     /// Check if all win conditions are satisfied
-    /// Returns true only if ALL boxes are at their correct exit positions
+    /// Returns true only if ALL required objects are at their correct exit positions
     /// </summary>
     public bool CheckWinConditions()
     {
@@ -247,61 +238,49 @@ public class GameState : MonoBehaviour
         
         if (winConditions.Count == 0)
         {
-            // No win conditions defined
             Debug.Log("[WinCheck] No win conditions registered");
             return false;
         }
         
-        Debug.Log($"[WinCheck] Checking {winConditions.Count} color groups...");
+        Debug.Log($"[WinCheck] Checking {winConditions.Count} prefab groups...");
         
-        // Check each color's win conditions
         foreach (var kvp in winConditions)
         {
-            string requiredColor = kvp.Key;
+            GameObject requiredPrefab = kvp.Key;
             List<Vector3Int> requiredPositions = kvp.Value;
             
-            Debug.Log($"[WinCheck] Checking {requiredColor}: needs {requiredPositions.Count} positions");
+            Debug.Log($"[WinCheck] Checking {requiredPrefab.name}: needs {requiredPositions.Count} positions");
             
-            // For each required position (exit block position), check one block ABOVE it
             foreach (Vector3Int exitPos in requiredPositions)
             {
-                // Check the position ABOVE the exit block (where the box would be standing)
+                // Check the position ABOVE the exit block (where the object would be standing)
                 Vector3Int checkPos = exitPos + Vector3Int.up;
                 Object objAtPosition = GetObjectAt(checkPos);
                 
-                // Check if there's an object at this position
                 if (objAtPosition == null)
                 {
-                    Debug.Log($"[WinCheck] ✗ No object at {checkPos} above exit {exitPos} (need {requiredColor})");
+                    Debug.Log($"[WinCheck] ✗ No object at {checkPos} above exit {exitPos} (need {requiredPrefab.name})");
                     return false;
                 }
                 
-                // Check if it's alive
                 if (!objAtPosition.IsAlive())
                 {
-                    Debug.Log($"[WinCheck] ✗ Dead object at {checkPos} (need {requiredColor})");
+                    Debug.Log($"[WinCheck] ✗ Dead object at {checkPos} (need {requiredPrefab.name})");
                     return false;
                 }
                 
-                // Check if it's a box
-                if (objAtPosition.type != "box")
+                // Check if it matches the required prefab
+                if (objAtPosition.prefab != requiredPrefab)
                 {
-                    Debug.Log($"[WinCheck] ✗ Wrong type at {checkPos}: {objAtPosition.type} (need box)");
+                    string actualPrefab = objAtPosition.prefab != null ? objAtPosition.prefab.name : "NULL";
+                    Debug.Log($"[WinCheck] ✗ Wrong prefab at {checkPos}: {actualPrefab} (need {requiredPrefab.name})");
                     return false;
                 }
                 
-                // Check if it's the correct color
-                if (objAtPosition.color != requiredColor)
-                {
-                    Debug.Log($"[WinCheck] ✗ Wrong color at {checkPos}: {objAtPosition.color} (need {requiredColor})");
-                    return false;
-                }
-                
-                Debug.Log($"[WinCheck] ✓ Correct {requiredColor} box at {checkPos} (above exit at {exitPos})");
+                Debug.Log($"[WinCheck] ✓ Correct {requiredPrefab.name} at {checkPos} (above exit at {exitPos})");
             }
         }
         
-        // All win conditions satisfied!
         Debug.Log("========================================");
         Debug.Log("[WinCheck] ✓✓✓ ALL WIN CONDITIONS SATISFIED! ✓✓✓");
         Debug.Log("========================================");
@@ -311,7 +290,7 @@ public class GameState : MonoBehaviour
     /// <summary>
     /// Get all win condition positions (for debugging/visualization)
     /// </summary>
-    public Dictionary<string, List<Vector3Int>> GetWinConditions()
+    public Dictionary<GameObject, List<Vector3Int>> GetWinConditions()
     {
         InitializeDictionaries();
         return winConditions;
