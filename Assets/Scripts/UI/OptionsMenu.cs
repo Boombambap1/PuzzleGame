@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Rendering.PostProcessing;
 using UnityEngine.SceneManagement;
 
 public class OptionsMenu : MonoBehaviour
@@ -14,7 +13,7 @@ public class OptionsMenu : MonoBehaviour
 
     [SerializeField] private Color unselectedButton = new Color(200, 200, 200);
     [SerializeField] private Color selectedButton = Color.white;
-
+    [SerializeField] string mainMenuSceneName = "MainMenu";
 
     void SetButtonState(Button button, bool selected)
     {
@@ -29,7 +28,6 @@ public class OptionsMenu : MonoBehaviour
 
     void Awake()
     {
-        CloseMenu();
         SetButtonState(settingsButton, false);
         SetButtonState(keybindsButton, false);
         SetButtonState(mechanicsButton, false);
@@ -67,8 +65,13 @@ public class OptionsMenu : MonoBehaviour
 
     public void CloseMenu()
     {
-        settingsMenuUI.SetActive(false);
-        keybindsMenuUI.SetActive(false);
-        mechanicsMenuUI.SetActive(false);
+        if (SceneTracker.Instance != null && !string.IsNullOrEmpty(SceneTracker.Instance.LastScene))
+        {
+            SceneManager.LoadScene(SceneTracker.Instance.LastScene);
+        }
+        else
+        {
+            SceneManager.LoadScene(mainMenuSceneName);
+        }
     }
 }
