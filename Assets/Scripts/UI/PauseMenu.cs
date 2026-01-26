@@ -6,7 +6,16 @@ public class PauseMenu : MonoBehaviour
 {
     public GameObject pauseMenuUI;
     public GameObject pauseButton;
+    public enum OptionsMenuTab
+    {
+        Settings,
+        Keybinds,
+        Mechanics
+    }
     private PostProcessVolume ppVolume;
+    private OptionsMenuTab tabToOpen;
+    [SerializeField] string optionsMenuSceneName = "OptionsMenu";
+    [SerializeField] string mainMenuSceneName = "MainMenu";
 
     void Start()
     {
@@ -21,7 +30,7 @@ public class PauseMenu : MonoBehaviour
         pauseMenuUI.SetActive(true);
         ppVolume.enabled = true;
         pauseButton.SetActive(false);
-        Time.timeScale = 0f; // stops the game
+        Time.timeScale = 0f;
     }
 
     public void Resume()
@@ -38,10 +47,49 @@ public class PauseMenu : MonoBehaviour
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 
+    void LoadOptionsMenu()
+    {
+        SceneManager.sceneLoaded += OnOptionsMenuLoaded;
+        SceneManager.LoadScene(optionsMenuSceneName);
+    }
+
+    void OnOptionsMenuLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name != optionsMenuSceneName)
+        {
+            return;
+        }
+        SceneManager.sceneLoaded -= OnOptionsMenuLoaded;
+        OptionsMenu optionsMenu = FindObjectOfType<OptionsMenu>();
+        switch (tabToOpen)
+        {
+            case OptionsMenuTab.Settings:
+                optionsMenu.OpenSettingsMenu();
+                break;
+            case OptionsMenuTab.Keybinds:
+                optionsMenu.OpenKeybindsMenu();
+                break;
+            case OptionsMenuTab.Mechanics:
+                optionsMenu.OpenMechanicsMenu();
+                break;
+        }
+    }
+
+    public void OpenSettingsMenu()
+    {
+        tabToOpen = OptionsMenuTab.Settings;
+        LoadOptionsMenu();
+    }
+
+    public void OpenMechanicsMenu()
+    {
+        tabToOpen = OptionsMenuTab.Mechanics;
+        LoadOptionsMenu();
+    }
+
     public void QuitGame()
     {
         Time.timeScale = 1f;
-        Debug.Log("quit game");
-        Application.Quit();
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 }

@@ -13,7 +13,6 @@ public class OptionsMenu : MonoBehaviour
 
     [SerializeField] private Color unselectedButton = new Color(200, 200, 200);
     [SerializeField] private Color selectedButton = Color.white;
-    [SerializeField] string mainMenuSceneName = "MainMenu";
 
     void SetButtonState(Button button, bool selected)
     {
@@ -65,13 +64,6 @@ public class OptionsMenu : MonoBehaviour
 
     public void CloseMenu()
     {
-        if (SceneTracker.Instance != null && !string.IsNullOrEmpty(SceneTracker.Instance.LastScene))
-        {
-            SceneManager.LoadScene(SceneTracker.Instance.LastScene);
-        }
-        else
-        {
-            SceneManager.LoadScene(mainMenuSceneName);
-        }
+        SceneTracker.Instance.GoToPreviousScene();
     }
 }
