@@ -16,10 +16,12 @@ public class PauseMenu : MonoBehaviour
     private OptionsMenuTab tabToOpen;
     [SerializeField] string optionsMenuSceneName = "OptionsMenu";
     [SerializeField] string mainMenuSceneName = "MainMenu";
+    bool paused = false;
 
     void Start()
     {
         pauseMenuUI.SetActive(false);
+        paused = false;
 
         ppVolume = Camera.main.gameObject.GetComponent<PostProcessVolume>();
         ppVolume.enabled = false;
@@ -31,6 +33,7 @@ public class PauseMenu : MonoBehaviour
         ppVolume.enabled = true;
         pauseButton.SetActive(false);
         Time.timeScale = 0f;
+        paused = true;
     }
 
     public void Resume()
@@ -39,6 +42,19 @@ public class PauseMenu : MonoBehaviour
         ppVolume.enabled = false;
         pauseButton.SetActive(true);
         Time.timeScale = 1f;
+        paused = false;
+    }
+
+    public void TogglePause()
+    {
+        if (paused)
+        {
+            Resume();
+        }
+        else
+        {
+            Pause();
+        }
     }
 
     public void Restart()
