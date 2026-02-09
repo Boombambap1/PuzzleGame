@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    public GameObject levelsMenuUI;
+    public GameObject canvasOverlay;
     public enum OptionsMenuTab
     {
         Settings,
@@ -17,7 +17,7 @@ public class MainMenu : MonoBehaviour
 
     void Start()
     {
-        levelsMenuUI.SetActive(false);
+        canvasOverlay.SetActive(false);
 
         ppVolume = Camera.main.gameObject.GetComponent<PostProcessVolume>();
         ppVolume.enabled = false;
@@ -25,13 +25,13 @@ public class MainMenu : MonoBehaviour
 
     public void OpenLevelsMenu()
     {
-        levelsMenuUI.SetActive(true);
+        canvasOverlay.SetActive(true);
         ppVolume.enabled = true;
     }
 
     public void CloseLevelsMenu()
     {
-        levelsMenuUI.SetActive(false);
+        canvasOverlay.SetActive(false);
         ppVolume.enabled = false;
     }
 
