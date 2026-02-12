@@ -72,7 +72,7 @@ public class GamePhysics : MonoBehaviour
     /// <summary>
     /// Initiates a step based on player input direction
     /// </summary>
-    public List<TickData> StartStep(Direction playerInput)
+    public List<TickData> StartStep(Vector3Int playerInput)
     {
         // Don't start a new step if one is already processing
         if (isProcessingStep)
@@ -93,11 +93,11 @@ public class GamePhysics : MonoBehaviour
         }
         
         // Calculate target position
-        Vector3Int moveVector = DirectionToVector(playerInput);
+        Vector3Int moveVector = playerInput;
         Vector3Int targetPos = player.position + moveVector;
         
-        // Check if move is valid (not into a wall or void)
-        if (!IsValidMove(targetPos))
+        // Check if move is valid (not into a wall)
+        if (!IsValidMove(targetPos, moveVector))
         {
             return null;
         }
@@ -109,7 +109,7 @@ public class GamePhysics : MonoBehaviour
         
         // Execute player movement
         TickData firstTick = new TickData(tickCount);
-        ExecutePlayerMove(player, playerInput, targetPos, firstTick);
+        ExecutePlayerMove(player, moveVector, targetPos, firstTick);
         currentStepData.Add(firstTick);
         
         // Process the rest of the step
@@ -194,7 +194,7 @@ public class GamePhysics : MonoBehaviour
     /// <summary>
     /// Executes the initial player movement
     /// </summary>
-    private void ExecutePlayerMove(Object player, Direction direction, Vector3Int targetPos, TickData tickData)
+    private void ExecutePlayerMove(Object player, Vector3Int direction, Vector3Int targetPos, TickData tickData)
     {
         Vector3Int abovePlayerOldPos = player.position + Vector3Int.up;
         Object carriedObject = gameState.GetObjectAt(abovePlayerOldPos);
@@ -204,11 +204,11 @@ public class GamePhysics : MonoBehaviour
         
         if (targetObject != null)
         {
-            Vector3Int pushTarget = targetPos + DirectionToVector(direction);
+            Vector3Int pushTarget = targetPos + direction;
             
-            if (CanPushObject(targetObject, pushTarget))
+            if (IsValidMove(pushTarget, direction))
             {
-                PushObject(targetObject, direction, pushTarget, tickData);
+                PushObject(targetObject, direction, tickData);
                 MoveObject(player, targetPos, TaskAction.Move, tickData);
                 playerMoved = true;
             }
@@ -224,26 +224,63 @@ public class GamePhysics : MonoBehaviour
             MoveCarriedObjectDirect(carriedObject, direction, tickData);
         }
     }
-    
+
     /// <summary>
     /// Move a specific carried object (after the carrier has already moved)
     /// </summary>
-    private void MoveCarriedObjectDirect(Object carriedObject, Direction direction, TickData tickData)
+    private void MoveCarriedObjectDirect(Object carriedObject, Vector3Int direction, TickData tickData)
     {
-        Vector3Int aboveCarriedOldPos = carriedObject.position + Vector3Int.up;
-        Object nextCarried = gameState.GetObjectAt(aboveCarriedOldPos);
-        
-        Vector3Int carriedTarget = carriedObject.position + DirectionToVector(direction);
-        
-        if (CanMoveCarriedObject(carriedObject, carriedTarget))
+        Vector3Int aboveCarriedMain = carriedObject.position + Vector3Int.up;
+        Object nextCarriedMain = gameState.GetObjectAt(aboveCarriedMain);
+
+        Object nextCarriedSecondary = null;
+        if (carriedObject.type == "1x2_box")
         {
-            MoveObject(carriedObject, carriedTarget, TaskAction.Move, tickData);
-            
-            if (nextCarried != null && nextCarried.IsAlive())
+            Vector3Int secondaryPos = carriedObject.GetSecondaryPosition();
+            Vector3Int aboveCarriedSecondary = secondaryPos + Vector3Int.up;
+            nextCarriedSecondary = gameState.GetObjectAt(aboveCarriedSecondary);
+        }
+
+        if (nextCarriedSecondary == nextCarriedMain)
+        {
+            nextCarriedSecondary = null;
+        }
+
+        Vector3Int carriedTarget = carriedObject.position + direction;
+        bool canMove = IsValidMove(carriedTarget, direction) && IsCellFreeOrSelf(carriedTarget, carriedObject);
+
+        if (carriedObject.type == "1x2_box")
+        {
+            Vector3Int secondaryPos = carriedObject.GetSecondaryPosition();
+            Vector3Int secondaryTarget = secondaryPos + direction;
+            if (carriedObject.position != secondaryPos)
             {
-                MoveCarriedObjectDirect(nextCarried, direction, tickData);
+                canMove = canMove
+                      && IsValidMove(secondaryTarget, direction)
+                      && IsCellFreeOrSelf(secondaryTarget, carriedObject);
             }
         }
+
+        if (canMove)
+        {
+            MoveObject(carriedObject, carriedTarget, TaskAction.Move, tickData);
+
+            if (nextCarriedMain != null && nextCarriedMain.IsAlive())
+            {
+                MoveCarriedObjectDirect(nextCarriedMain, direction, tickData);
+            }
+
+            if (nextCarriedSecondary != null && nextCarriedSecondary.IsAlive())
+            {
+                MoveCarriedObjectDirect(nextCarriedSecondary, direction, tickData);
+            }
+        }
+    }
+
+    private bool IsCellFreeOrSelf(Vector3Int pos, Object self)
+    {
+        Object objAtPos = gameState.GetObjectAt(pos);
+        return objAtPos == null || objAtPos == self || !objAtPos.IsAlive();
     }
     
     /// <summary>
@@ -288,10 +325,24 @@ public class GamePhysics : MonoBehaviour
                     KillObject(obj, tickData);
                     anyFalling = true;
                 }
-                else if (IsValidMove(belowPos) && gameState.GetObjectAt(belowPos) == null)
+                else
                 {
-                    MoveObject(obj, belowPos, TaskAction.Fall, tickData);
-                    anyFalling = true;
+                    bool canFall = IsValidMove(belowPos, Vector3Int.down) && gameState.GetObjectAt(belowPos) == null;
+
+                    if (obj.type == "1x2_box")
+                    {
+                        Vector3Int secondaryPos = obj.GetSecondaryPosition();
+                        Vector3Int secondaryBelow = secondaryPos + Vector3Int.down;
+                        canFall = canFall
+                                  && IsValidMove(secondaryBelow, Vector3Int.down)
+                                  && gameState.GetObjectAt(secondaryBelow) == null;
+                    }
+
+                    if (canFall)
+                    {
+                        MoveObject(obj, belowPos, TaskAction.Fall, tickData);
+                        anyFalling = true;
+                    }
                 }
             }
         }
@@ -314,7 +365,7 @@ public class GamePhysics : MonoBehaviour
             Debug.Log($"[Respawn Check] {obj.color} {obj.type}, alive: {obj.alive}, prefab: {(obj.prefab != null ? obj.prefab.name : "NULL")}");
             
             // Check if object is dead and can respawn (boxes or player)
-            if (!obj.IsAlive() && (obj.type == "box" || obj.type == "robot"))
+            if (!obj.IsAlive() && (obj.type == "box" || obj.type == "player" || obj.type == "1x2_box"))
             {
                 if (obj.prefab == null)
                 {
@@ -327,8 +378,8 @@ public class GamePhysics : MonoBehaviour
                 if (spawnPos.HasValue)
                 {
                     Vector3Int respawnPosition = new Vector3Int(
-                        spawnPos.Value.x, 
-                        spawnPos.Value.y + RESPAWN_HEIGHT, 
+                        spawnPos.Value.x,
+                        spawnPos.Value.y + RESPAWN_HEIGHT,
                         spawnPos.Value.z
                     );
                     
@@ -349,55 +400,72 @@ public class GamePhysics : MonoBehaviour
     /// <summary>
     /// Check if a position is valid for movement (not blocked by a wall)
     /// </summary>
-    private bool IsValidMove(Vector3Int pos)
+    private bool IsValidMove(Vector3Int pos, Vector3Int direction)
     {
+        if (direction == Vector3Int.zero)
+        {
+            return false;
+        }
+
         GeoType geoType = geoState.GetGeoTypeAt(pos);
-        return geoType != GeoType.Block;
-    }
-    
-    /// <summary>
-    /// Check if an object can be pushed to a target position
-    /// </summary>
-    private bool CanPushObject(Object obj, Vector3Int targetPos)
-    {
-        if (!IsValidMove(targetPos)) return false;
-        if (gameState.GetObjectAt(targetPos) != null) return false;
-        return true;
-    }
-    
-    /// <summary>
-    /// Check if a carried object can move to target position
-    /// </summary>
-    private bool CanMoveCarriedObject(Object obj, Vector3Int targetPos)
-    {
-        GeoType geoAtTarget = geoState.GetGeoTypeAt(targetPos);
-        if (geoAtTarget == GeoType.Block)
+        if (geoType == GeoType.Block)
         {
             return false;
         }
-        
-        Object objectAtTarget = gameState.GetObjectAt(targetPos);
-        if (objectAtTarget != null && objectAtTarget.IsAlive())
+
+        Object objAtPos = gameState.GetObjectAt(pos);
+        if (objAtPos == null || !objAtPos.IsAlive())
         {
-            return false;
+            return true;
         }
-        
-        return true;
+
+        Vector3Int nextPos = pos + direction;
+        if (objAtPos.type == "1x2_box")
+        {
+            if (pos == objAtPos.position && direction == objAtPos.rotation)
+            {
+                nextPos = objAtPos.GetSecondaryPosition() + direction;
+            }
+            else if (pos == objAtPos.GetSecondaryPosition()&& direction == -objAtPos.rotation)
+            {
+                nextPos = objAtPos.position + direction;
+            }
+        }
+        return IsValidMove(nextPos, direction);
     }
-    
+
     /// <summary>
     /// Push an object in a direction
     /// </summary>
-    private void PushObject(Object obj, Direction direction, Vector3Int targetPos, TickData tickData)
+    private void PushObject(Object obj, Vector3Int direction, TickData tickData)
     {
-        Vector3Int aboveObjOldPos = obj.position + Vector3Int.up;
-        Object carriedByPushed = gameState.GetObjectAt(aboveObjOldPos);
+        Vector3Int aboveObjOldPos1 = obj.position + Vector3Int.up;
+        Object carriedByPushed1 = gameState.GetObjectAt(aboveObjOldPos1);
+
+        Object carriedByPushed2 = null;
+        if (obj.type == "1x2_box")
+        {
+            Vector3Int aboveObjOldPos2 = obj.GetSecondaryPosition() + Vector3Int.up;
+            carriedByPushed2 = gameState.GetObjectAt(aboveObjOldPos2);
+        }
         
+        if (obj.type == "1x2_box" && carriedByPushed2 == carriedByPushed1)
+        {
+            carriedByPushed2 = null;
+        }
+
+        Vector3Int targetPos = obj.position + direction;
+
         MoveObject(obj, targetPos, TaskAction.Slide, tickData);
         
-        if (carriedByPushed != null && carriedByPushed.IsAlive())
+        if (carriedByPushed1 != null && carriedByPushed1.IsAlive())
         {
-            MoveCarriedObjectDirect(carriedByPushed, direction, tickData);
+            MoveCarriedObjectDirect(carriedByPushed1, direction, tickData);
+        }
+
+        if (obj.type == "1x2_box" && carriedByPushed2 != null && carriedByPushed2.IsAlive())
+        {
+            MoveCarriedObjectDirect(carriedByPushed2, direction, tickData);
         }
     }
     
@@ -413,7 +481,7 @@ public class GamePhysics : MonoBehaviour
         ObjectMovement movement = new ObjectMovement(obj, fromPos, targetPos, actionType);
         tickData.movements.Add(movement);
         
-        Direction moveDir = VectorToDirection(targetPos - fromPos);
+        Vector3Int moveDir = targetPos - fromPos;
         Task task = new Task(obj.color, actionType, moveDir);
         tickData.tasks.Add(task);
     }
@@ -425,7 +493,7 @@ public class GamePhysics : MonoBehaviour
     {
         obj.alive = false;
         
-        Task task = new Task(obj.color, TaskAction.Die, Direction.None);
+        Task task = new Task(obj.color, TaskAction.Die, Vector3Int.zero);
         tickData.tasks.Add(task);
         
         ObjectMovement movement = new ObjectMovement(obj, obj.position, obj.position, TaskAction.Die);
@@ -441,41 +509,10 @@ public class GamePhysics : MonoBehaviour
         Vector3Int oldPos = obj.position;
         gameState.MoveObjectTo(obj, spawnPos);
         
-        Task task = new Task(obj.color, TaskAction.Respawn, Direction.None);
+        Task task = new Task(obj.color, TaskAction.Respawn, Vector3Int.zero);
         tickData.tasks.Add(task);
         
         ObjectMovement movement = new ObjectMovement(obj, oldPos, spawnPos, TaskAction.Respawn);
         tickData.movements.Add(movement);
-    }
-    
-    /// <summary>
-    /// Convert Direction enum to Vector3Int
-    /// </summary>
-    private Vector3Int DirectionToVector(Direction dir)
-    {
-        return dir switch
-        {
-            Direction.Forward => new Vector3Int(0, 0, 1),
-            Direction.Backward => new Vector3Int(0, 0, -1),
-            Direction.Left => new Vector3Int(-1, 0, 0),
-            Direction.Right => new Vector3Int(1, 0, 0),
-            Direction.Up => new Vector3Int(0, 1, 0),
-            Direction.Down => new Vector3Int(0, -1, 0),
-            _ => Vector3Int.zero
-        };
-    }
-    
-    /// <summary>
-    /// Convert Vector3Int to Direction enum
-    /// </summary>
-    private Direction VectorToDirection(Vector3Int vec)
-    {
-        if (vec == Vector3Int.forward) return Direction.Forward;
-        if (vec == Vector3Int.back) return Direction.Backward;
-        if (vec == Vector3Int.left) return Direction.Left;
-        if (vec == Vector3Int.right) return Direction.Right;
-        if (vec == Vector3Int.up) return Direction.Up;
-        if (vec == Vector3Int.down) return Direction.Down;
-        return Direction.None;
     }
 }

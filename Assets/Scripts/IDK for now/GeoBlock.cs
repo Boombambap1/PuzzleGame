@@ -163,8 +163,6 @@ public class GeoBlock : MonoBehaviour
                     "green" => Color.green,
                     "blue" => Color.blue,
                     "yellow" => Color.yellow,
-                    "cyan" => Color.cyan,
-                    "magenta" => Color.magenta,
                     _ => Color.green
                 };
             }

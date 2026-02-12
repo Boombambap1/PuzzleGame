@@ -40,6 +40,22 @@ public class GameState : MonoBehaviour
             winConditions = new Dictionary<GameObject, List<Vector3Int>>();
         }
     }
+
+    private Vector3Int[] GetOccupiedPositions(Object obj)
+    {
+        if (obj == null)
+        {
+            return new Vector3Int[0];
+        }
+
+        Vector3Int secondary = obj.GetSecondaryPosition();
+        if (obj.type == "1x2_box")
+        {
+            return new[] { obj.position, secondary};
+        }
+
+        return new[] { obj.position };
+    }
     
     /// <summary>
     /// Place an object at a position
@@ -54,14 +70,17 @@ public class GameState : MonoBehaviour
         }
         
         obj.position = pos;
-        objectGrid[pos] = obj;
+        foreach (Vector3Int occupiedPos in GetOccupiedPositions(obj))
+        {
+            objectGrid[occupiedPos] = obj;
+        }
         
         if (!allObjects.Contains(obj))
         {
             allObjects.Add(obj);
         }
         
-        if (obj.type == "robot")
+        if (obj.type == "player")
         {
             player = obj;
         }
@@ -74,7 +93,10 @@ public class GameState : MonoBehaviour
     {
         if (objectGrid.TryGetValue(pos, out Object obj))
         {
-            objectGrid.Remove(pos);
+            foreach (Vector3Int occupiedPos in GetOccupiedPositions(obj))
+            {
+                objectGrid.Remove(occupiedPos);
+            }
             allObjects.Remove(obj);
             
             if (obj == player)
@@ -89,13 +111,16 @@ public class GameState : MonoBehaviour
     /// </summary>
     public void MoveObjectTo(Object obj, Vector3Int newPos)
     {
-        if (objectGrid.ContainsKey(obj.position))
+        foreach (Vector3Int occupiedPos in GetOccupiedPositions(obj))
         {
-            objectGrid.Remove(obj.position);
+            objectGrid.Remove(occupiedPos);
         }
         
         obj.position = newPos;
-        objectGrid[newPos] = obj;
+        foreach (Vector3Int occupiedPos in GetOccupiedPositions(obj))
+        {
+            objectGrid[occupiedPos] = obj;
+        }
     }
     
     /// <summary>
@@ -155,24 +180,27 @@ public class GameState : MonoBehaviour
             return false;
         }
         
-        Vector3Int belowPos = obj.position + Vector3Int.down;
-        
-        Debug.Log($"[IsObjectInFreefall] Checking {obj.type} at {obj.position}, below is {belowPos}");
-        
-        GeoType geoBelow = geoState.GetGeoTypeAt(belowPos);
-        Debug.Log($"[IsObjectInFreefall] Geo below is: {geoBelow}");
-        
-        if (geoBelow == GeoType.Block || geoBelow == GeoType.Exit || geoBelow == GeoType.Spawn)
+        foreach (Vector3Int occupiedPos in GetOccupiedPositions(obj))
         {
-            Debug.Log($"[IsObjectInFreefall] Standing on {geoBelow}, not in freefall");
-            return false;
-        }
-        
-        Object objBelow = GetObjectAt(belowPos);
-        if (objBelow != null && objBelow.IsAlive())
-        {
-            Debug.Log($"[IsObjectInFreefall] Standing on {objBelow.type}, not in freefall");
-            return false;
+            Vector3Int belowPos = occupiedPos + Vector3Int.down;
+            
+            Debug.Log($"[IsObjectInFreefall] Checking {obj.type} at {occupiedPos}, below is {belowPos}");
+            
+            GeoType geoBelow = geoState.GetGeoTypeAt(belowPos);
+            Debug.Log($"[IsObjectInFreefall] Geo below is: {geoBelow}");
+            
+            if (geoBelow == GeoType.Block || geoBelow == GeoType.Exit || geoBelow == GeoType.Spawn)
+            {
+                Debug.Log($"[IsObjectInFreefall] Standing on {geoBelow}, not in freefall");
+                return false;
+            }
+            
+            Object objBelow = GetObjectAt(belowPos);
+            if (objBelow != null && objBelow.IsAlive())
+            {
+                Debug.Log($"[IsObjectInFreefall] Standing on {objBelow.type}, not in freefall");
+                return false;
+            }
         }
         
         Debug.Log($"[IsObjectInFreefall] Nothing below, IS in freefall");

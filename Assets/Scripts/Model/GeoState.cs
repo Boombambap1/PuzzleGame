@@ -92,7 +92,7 @@ public class GeoState : MonoBehaviour
     /// Find spawn position for a specific prefab
     /// Returns null if no spawn point found
     /// </summary>
-    public Vector3Int? FindSpawnPosition(GameObject prefab)
+    public Vector3Int FindSpawnPosition(GameObject prefab)
     {
         InitializeDictionaries();
         
@@ -102,7 +102,7 @@ public class GeoState : MonoBehaviour
         }
         
         Debug.LogError($"[GeoState] No spawn point found for prefab '{prefab.name}'!");
-        return null;
+        return Vector3Int.zero;
     }
     
     /// <summary>

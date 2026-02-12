@@ -34,7 +34,7 @@ public class BoxObject : MonoBehaviour
         Vector3Int gridPosition = Vector3Int.RoundToInt(transform.position);
         
         // Create the box Object
-        boxObject = new Object(boxColor, boxType, gridPosition, Direction.Forward);
+        boxObject = new Object(boxColor, boxType, gridPosition, Vector3Int.forward);
         
         // Register with GameState
         gameState.PlaceObjectAt(boxObject, gridPosition);

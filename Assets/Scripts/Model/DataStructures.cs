@@ -3,17 +3,6 @@ using UnityEngine;
 
 // ============= ENUMS =============
 
-public enum Direction
-{
-    None,
-    Left,
-    Right, 
-    Forward,
-    Backward,
-    Up,
-    Down
-}
-
 public enum TaskAction
 {
     Move,      // Standard movement
@@ -54,21 +43,21 @@ public class Object
 {
     // Core Identity
     public string color;           // "green", "red", "blue", "yellow", "none"
-    public string type;            // "robot", "box", "1x2_box"
+    public string type;            // "player", "box", "1x2_box"
     public Vector3Int position;    // Current grid position
-    public Direction rotation;     // Horizontal direction it is facing
+    public Vector3Int rotation;    // Horizontal direction it is facing
     public bool alive;             // Whether object is currently alive
     
     // Prefab reference for respawning
     public GameObject prefab;      // Reference to the original GameObject/prefab
     
     // Constructor
-    public Object(string objectColor, string objectType, Vector3Int startPos, Direction startRotation = Direction.Forward, GameObject objectPrefab = null)
+    public Object(string objectColor, string objectType, Vector3Int startPos, Vector3Int startRotation, GameObject objectPrefab = null)
     {
         color = objectColor;
         type = objectType;
         position = startPos;
-        rotation = startRotation;
+        rotation = startRotation == Vector3Int.zero ? Vector3Int.forward : startRotation;
         alive = true;
         prefab = objectPrefab;
     }
@@ -78,6 +67,26 @@ public class Object
     public bool IsColor(string checkColor) => color == checkColor;
     public bool IsAt(Vector3Int pos) => position == pos;
     public bool IsAlive() => alive;
+
+    /// <summary>
+    /// Get the secondary (non-main) cell position for a 1x2 box.
+    /// Returns null for non-1x2 objects.
+    /// </summary>
+    public Vector3Int GetSecondaryPosition()
+    {
+        if (type != "1x2_box") return position;
+
+        Vector3Int facing = rotation == Vector3Int.zero ? Vector3Int.forward : rotation;
+        Vector3Int offset = rotation switch
+        {
+            _ when facing == Vector3Int.left => Vector3Int.left,
+            _ when facing == Vector3Int.right => Vector3Int.right,
+            _ when facing == Vector3Int.back => Vector3Int.back,
+            _ => Vector3Int.forward
+        };
+
+        return position + offset;
+    }
     
     public override string ToString() => $"{color} {type} at {position} facing {rotation}";
 }
@@ -90,10 +99,10 @@ public class Task
 {
     public string color;         // The colored objects performing the action
     public TaskAction action;    // The action being performed
-    public Direction direction;  // The direction of movement (or None)
+    public Vector3Int direction; // The direction of movement (or None)
     
     // Constructor
-    public Task(string taskColor, TaskAction taskAction, Direction taskDirection = Direction.None)
+    public Task(string taskColor, TaskAction taskAction, Vector3Int taskDirection)
     {
         color = taskColor;
         action = taskAction;

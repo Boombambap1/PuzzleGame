@@ -13,19 +13,19 @@ public class InputProcessing : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.W))
         {
-            gamePhysics.StartStep(Direction.Forward);
+            gamePhysics.StartStep(Vector3Int.forward);
         }
         if (Input.GetKeyDown(KeyCode.A))
         {
-            gamePhysics.StartStep(Direction.Left);
+            gamePhysics.StartStep(Vector3Int.left);
         }
         if (Input.GetKeyDown(KeyCode.S))
         {
-            gamePhysics.StartStep(Direction.Backward);
+            gamePhysics.StartStep(Vector3Int.back);
         }
         if (Input.GetKeyDown(KeyCode.D))
         {
-            gamePhysics.StartStep(Direction.Right);
+            gamePhysics.StartStep(Vector3Int.right);
         }
     }
 }

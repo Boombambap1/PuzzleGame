@@ -51,7 +51,7 @@ public class PlayerInput : MonoBehaviour
             Debug.LogWarning("PlayerInput: No prefab reference assigned! Respawn won't work.");
         }
         
-        playerObject = new Object("none", "robot", gridPos, Direction.Forward, prefabReference);
+        playerObject = new Object("none", "player", gridPos, Vector3Int.forward, prefabReference);
         gameState.PlaceObjectAt(playerObject, gridPos);
         visualPosition = transform.position;
     }
@@ -111,32 +111,32 @@ public class PlayerInput : MonoBehaviour
             return;
         }
         
-        Direction inputDirection = Direction.None;
+        Vector3Int inputDirection = Vector3Int.zero;
         if (Input.GetKeyDown(KeyCode.W))
         {
-            inputDirection = Direction.Forward;
+            inputDirection = Vector3Int.forward;
         }
         else if (Input.GetKeyDown(KeyCode.S))
         {
-            inputDirection = Direction.Backward;
+            inputDirection = Vector3Int.back;
         }
         else if (Input.GetKeyDown(KeyCode.A))
         {
-            inputDirection = Direction.Left;
+            inputDirection = Vector3Int.left;
         }
         else if (Input.GetKeyDown(KeyCode.D))
         {
-            inputDirection = Direction.Right;
+            inputDirection = Vector3Int.right;
         }
         
-        if (inputDirection != Direction.None)
+        if (inputDirection != Vector3Int.zero)
         {
             ProcessMovement(inputDirection);
             lastInputTime = Time.time;
         }
     }
     
-    private void ProcessMovement(Direction direction)
+    private void ProcessMovement(Vector3Int direction)
     {
         isProcessingStep = true;
         List<TickData> stepData = gamePhysics.StartStep(direction);
