@@ -48,6 +48,8 @@ public class Object
     public Vector3Int rotation;    // Horizontal direction it is facing
     public bool alive;             // Whether object is currently alive
     
+    public Vector3Int movement;    // Movement change
+    
     // Prefab reference for respawning
     public GameObject prefab;      // Reference to the original GameObject/prefab
     
@@ -76,16 +78,7 @@ public class Object
     {
         if (type != "1x2_box") return position;
 
-        Vector3Int facing = rotation == Vector3Int.zero ? Vector3Int.forward : rotation;
-        Vector3Int offset = rotation switch
-        {
-            _ when facing == Vector3Int.left => Vector3Int.left,
-            _ when facing == Vector3Int.right => Vector3Int.right,
-            _ when facing == Vector3Int.back => Vector3Int.back,
-            _ => Vector3Int.forward
-        };
-
-        return position + offset;
+        return position + rotation;
     }
     
     public override string ToString() => $"{color} {type} at {position} facing {rotation}";

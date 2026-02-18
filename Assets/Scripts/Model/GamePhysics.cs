@@ -107,6 +107,9 @@ public class GamePhysics : MonoBehaviour
         tickCount = 0;
         currentStepData.Clear();
         
+        // Reset movement tracking for all objects
+        ResetAllMovements();
+        
         // Execute player movement
         TickData firstTick = new TickData(tickCount);
         ExecutePlayerMove(player, moveVector, targetPos, firstTick);
@@ -192,6 +195,18 @@ public class GamePhysics : MonoBehaviour
     }
     
     /// <summary>
+    /// Reset movement tracking for all objects at the start of a tick
+    /// </summary>
+    private void ResetAllMovements()
+    {
+        List<Object> allObjects = gameState.GetAllObjects();
+        foreach (Object obj in allObjects)
+        {
+            obj.movement = Vector3Int.zero;
+        }
+    }
+    
+    /// <summary>
     /// Executes the initial player movement
     /// </summary>
     private void ExecutePlayerMove(Object player, Vector3Int direction, Vector3Int targetPos, TickData tickData)
@@ -219,7 +234,7 @@ public class GamePhysics : MonoBehaviour
             playerMoved = true;
         }
         
-        if (playerMoved && carriedObject != null && carriedObject.IsAlive())
+        if (playerMoved && carriedObject != null && carriedObject.IsAlive() && carriedObject.movement == Vector3Int.zero)
         {
             MoveCarriedObjectDirect(carriedObject, direction, tickData);
         }
@@ -230,6 +245,12 @@ public class GamePhysics : MonoBehaviour
     /// </summary>
     private void MoveCarriedObjectDirect(Object carriedObject, Vector3Int direction, TickData tickData)
     {
+        // Skip if object has already moved this tick
+        if (carriedObject.movement != Vector3Int.zero)
+        {
+            return;
+        }
+
         Vector3Int aboveCarriedMain = carriedObject.position + Vector3Int.up;
         Object nextCarriedMain = gameState.GetObjectAt(aboveCarriedMain);
 
@@ -265,12 +286,12 @@ public class GamePhysics : MonoBehaviour
         {
             MoveObject(carriedObject, carriedTarget, TaskAction.Move, tickData);
 
-            if (nextCarriedMain != null && nextCarriedMain.IsAlive())
+            if (nextCarriedMain != null && nextCarriedMain.IsAlive() && nextCarriedMain.movement == Vector3Int.zero)
             {
                 MoveCarriedObjectDirect(nextCarriedMain, direction, tickData);
             }
 
-            if (nextCarriedSecondary != null && nextCarriedSecondary.IsAlive())
+            if (nextCarriedSecondary != null && nextCarriedSecondary.IsAlive() && nextCarriedSecondary.movement == Vector3Int.zero)
             {
                 MoveCarriedObjectDirect(nextCarriedSecondary, direction, tickData);
             }
@@ -408,7 +429,7 @@ public class GamePhysics : MonoBehaviour
         }
 
         GeoType geoType = geoState.GetGeoTypeAt(pos);
-        if (geoType == GeoType.Block)
+        if (geoType == GeoType.Block || geoType == GeoType.Spawn || geoType == GeoType.Exit)
         {
             return false;
         }
@@ -426,7 +447,7 @@ public class GamePhysics : MonoBehaviour
             {
                 nextPos = objAtPos.GetSecondaryPosition() + direction;
             }
-            else if (pos == objAtPos.GetSecondaryPosition()&& direction == -objAtPos.rotation)
+            else if (pos == objAtPos.GetSecondaryPosition() && direction == -objAtPos.rotation)
             {
                 nextPos = objAtPos.position + direction;
             }
@@ -439,6 +460,31 @@ public class GamePhysics : MonoBehaviour
     /// </summary>
     private void PushObject(Object obj, Vector3Int direction, TickData tickData)
     {
+        // Skip if object has already moved this tick
+        if (obj.movement != Vector3Int.zero) return;
+
+        Vector3Int targetPos = obj.position + direction;
+        
+        // Recursively push any objects blocking the target position
+        Object blockingObject = gameState.GetObjectAt(targetPos);
+        if (blockingObject != null && blockingObject.IsAlive() && blockingObject != obj)
+        {
+            PushObject(blockingObject, direction, tickData);
+        }
+        
+        // For 1x2 boxes, check and push objects blocking the secondary position
+        if (obj.type == "1x2_box")
+        {
+            Vector3Int secondaryPos = obj.GetSecondaryPosition();
+            Vector3Int secondaryTarget = secondaryPos + direction;
+            Object blockingSecondary = gameState.GetObjectAt(secondaryTarget);
+            if (blockingSecondary != null && blockingSecondary.IsAlive() && 
+                blockingSecondary != obj && blockingSecondary != blockingObject)
+            {
+                PushObject(blockingSecondary, direction, tickData);
+            }
+        }
+
         Vector3Int aboveObjOldPos1 = obj.position + Vector3Int.up;
         Object carriedByPushed1 = gameState.GetObjectAt(aboveObjOldPos1);
 
@@ -454,16 +500,14 @@ public class GamePhysics : MonoBehaviour
             carriedByPushed2 = null;
         }
 
-        Vector3Int targetPos = obj.position + direction;
-
         MoveObject(obj, targetPos, TaskAction.Slide, tickData);
         
-        if (carriedByPushed1 != null && carriedByPushed1.IsAlive())
+        if (carriedByPushed1 != null && carriedByPushed1.IsAlive() && carriedByPushed1.movement == Vector3Int.zero)
         {
             MoveCarriedObjectDirect(carriedByPushed1, direction, tickData);
         }
 
-        if (obj.type == "1x2_box" && carriedByPushed2 != null && carriedByPushed2.IsAlive())
+        if (obj.type == "1x2_box" && carriedByPushed2 != null && carriedByPushed2.IsAlive() && carriedByPushed2.movement == Vector3Int.zero)
         {
             MoveCarriedObjectDirect(carriedByPushed2, direction, tickData);
         }
@@ -475,13 +519,16 @@ public class GamePhysics : MonoBehaviour
     private void MoveObject(Object obj, Vector3Int targetPos, TaskAction actionType, TickData tickData)
     {
         Vector3Int fromPos = obj.position;
+        Vector3Int moveDir = targetPos - fromPos;
         
         gameState.MoveObjectTo(obj, targetPos);
+        
+        // Track this movement
+        obj.movement += moveDir;
         
         ObjectMovement movement = new ObjectMovement(obj, fromPos, targetPos, actionType);
         tickData.movements.Add(movement);
         
-        Vector3Int moveDir = targetPos - fromPos;
         Task task = new Task(obj.color, actionType, moveDir);
         tickData.tasks.Add(task);
     }
