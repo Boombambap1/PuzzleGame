@@ -6,19 +6,19 @@ public class LevelManager : MonoBehaviour
     [Header("Level Files")]
     [Tooltip("Drag all your JSON level files here in order")]
     public TextAsset[] levelFiles;
-    
+
     [Header("References")]
     public LevelJsonLoader jsonLoader;
     public GamePhysics gamePhysics;
-    
+
     [Header("Scene Names")]
     [SerializeField] string mainMenuSceneName = "MainMenu";
-    
+
     [Header("Current State")]
     public int currentLevelIndex = 0;
-    
+
     private bool levelComplete = false;
-    
+
     void Start()
     {
         if (jsonLoader == null)
@@ -29,17 +29,17 @@ public class LevelManager : MonoBehaviour
         {
             gamePhysics = FindObjectOfType<GamePhysics>();
         }
-        
+
         // Check if main menu told us which level to start at
         if (PlayerPrefs.HasKey("StartLevel"))
         {
             currentLevelIndex = PlayerPrefs.GetInt("StartLevel");
             PlayerPrefs.DeleteKey("StartLevel"); // Clear after reading
         }
-        
+
         LoadLevel(currentLevelIndex);
     }
-    
+
     void Update()
     {
         // Keyboard shortcuts
@@ -56,7 +56,7 @@ public class LevelManager : MonoBehaviour
             ReturnToMainMenu();
         }
     }
-    
+
     public void LoadLevel(int levelIndex)
     {
         if (levelIndex < 0 || levelIndex >= levelFiles.Length)
@@ -64,21 +64,21 @@ public class LevelManager : MonoBehaviour
             Debug.LogError($"Level index {levelIndex} out of range! Total levels: {levelFiles.Length}");
             return;
         }
-        
+
         currentLevelIndex = levelIndex;
         levelComplete = false;
-        
+
         Debug.Log($"========================================");
         Debug.Log($"Loading Level {currentLevelIndex + 1} of {levelFiles.Length}");
         Debug.Log($"========================================");
-        
+
         // Load JSON
         string json = levelFiles[levelIndex].text;
         jsonLoader.LoadLevelFromJson(json);
-        
+
         // Apply initial gravity after a short delay
         Invoke("ApplyGravity", 0.1f);
-        
+
         // Update UI
         UIManager uiManager = FindObjectOfType<UIManager>();
         if (uiManager != null)
@@ -86,7 +86,7 @@ public class LevelManager : MonoBehaviour
             uiManager.UpdateLevelDisplay();
         }
     }
-    
+
     private void ApplyGravity()
     {
         if (gamePhysics != null)
@@ -94,7 +94,7 @@ public class LevelManager : MonoBehaviour
             gamePhysics.ApplyGravity();
         }
     }
-    
+
     public void LoadNextLevel()
     {
         if (currentLevelIndex + 1 < levelFiles.Length)
@@ -109,27 +109,27 @@ public class LevelManager : MonoBehaviour
             OnGameComplete();
         }
     }
-    
+
     public void RestartLevel()
     {
         Debug.Log("Restarting level...");
         LoadLevel(currentLevelIndex);
     }
-    
+
     public void ReturnToMainMenu()
     {
         // Save progress before returning
         PlayerPrefs.SetInt("LastCompletedLevel", currentLevelIndex);
         PlayerPrefs.Save();
-        
+
         SceneManager.LoadScene(mainMenuSceneName);
     }
-    
+
     // Called by GamePhysics via SendMessage when win condition is met
     void OnWinConditionMet()
     {
         levelComplete = true;
-        
+
         // Save progress (unlock next level)
         int lastCompleted = PlayerPrefs.GetInt("LastCompletedLevel", -1);
         if (currentLevelIndex > lastCompleted)
@@ -137,7 +137,7 @@ public class LevelManager : MonoBehaviour
             PlayerPrefs.SetInt("LastCompletedLevel", currentLevelIndex);
             PlayerPrefs.Save();
         }
-        
+
         // Notify UI
         UIManager uiManager = FindObjectOfType<UIManager>();
         if (uiManager != null)
@@ -145,7 +145,7 @@ public class LevelManager : MonoBehaviour
             uiManager.ShowWinScreen();
         }
     }
-    
+
     private void OnGameComplete()
     {
         UIManager uiManager = FindObjectOfType<UIManager>();
@@ -154,12 +154,12 @@ public class LevelManager : MonoBehaviour
             uiManager.ShowGameCompleteScreen();
         }
     }
-    
+
     public int GetTotalLevels()
     {
         return levelFiles.Length;
     }
-    
+
     public int GetCurrentLevel()
     {
         return currentLevelIndex + 1; // 1-indexed for display
