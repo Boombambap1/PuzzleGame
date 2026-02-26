@@ -222,111 +222,90 @@ public class LevelJsonLoader : MonoBehaviour
         levelRoot = root.transform;
     }
 
+[Header("Geo Models")]
+[SerializeField] private GameObject baseBlockModel;
+[SerializeField] private GameObject[] spawnModels = new GameObject[4]; 
+[SerializeField] private GameObject[] exitModels = new GameObject[4];  
+
+[Header("Object Models")]
+[SerializeField] private GameObject[] boxModels = new GameObject[3];
+[SerializeField] private GameObject playerModel;
+
     private void SpawnVisualBlock(Vector3Int pos, GeoType geoType, int tileId)
     {
-        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cube.name = $"Tile_{tileId}_{pos}";
-        cube.transform.position = (Vector3)pos;
-        cube.transform.SetParent(levelRoot);
-
-        Renderer renderer = cube.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            renderer.material.color = GetTileColor(geoType, tileId);
-        }
-    }
-
-    private Color GetTileColor(GeoType geoType, int tileId)
-    {
-        if (geoType == GeoType.Block) return Color.gray;
-
+        GameObject prefabToSpawn = baseBlockModel;
         int colorIndex = (tileId - 1) % 4;
-        Color baseColor = colorIndex switch
-        {
-            0 => Color.green,
-            1 => Color.red,
-            2 => Color.blue,
-            3 => Color.yellow,
-            _ => Color.white
-        };
+        if (geoType == GeoType.Spawn) prefabToSpawn = spawnModels[colorIndex];
+        else if (geoType == GeoType.Exit) prefabToSpawn = exitModels[colorIndex];
 
-        if (geoType == GeoType.Spawn)
-        {
-            // Lighter color for spawn blocks
-            baseColor = Color.Lerp(baseColor, Color.white, 0.5f);
-        }
-        else if (geoType == GeoType.Exit)
-        {
-            baseColor *= 0.6f;
-            baseColor.a = 1f;
-        }
 
-        return baseColor;
+        GameObject visualBlock = Instantiate(prefabToSpawn, (Vector3)pos, Quaternion.identity);
+        visualBlock.name = $"Tile_{tileId}_{pos}";
+        visualBlock.transform.SetParent(levelRoot);
     }
 
 
     private void SpawnPlayer(Vector3Int pos)
     {
-        GameObject playerObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        playerObj.name = "Player";
-        playerObj.transform.position = (Vector3)pos;
-        playerObj.transform.SetParent(levelRoot);
+        GameObject prefabToSpawn = playerModel != null ? playerModel : GameObject.CreatePrimitive(PrimitiveType.Cube);
 
-        Renderer renderer = playerObj.GetComponent<Renderer>();
-        if (renderer != null)
-            renderer.material.color = Color.green;
+
+        GameObject playerObj = Instantiate(prefabToSpawn, (Vector3)pos, Quaternion.identity);
+        playerObj.name = "Player";
+        playerObj.transform.SetParent(levelRoot);
 
         PlayerInput playerInput = playerObj.AddComponent<PlayerInput>();
         playerInput.prefabReference = greenBoxPrefab;
-        playerInput.moveSpeed = 99999f;
+        playerInput.moveSpeed = 10f;
     }
 
     private void SpawnBox(Vector3Int pos, string color)
     {
-        GameObject boxObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        boxObj.name = $"Box_{color}";
-        boxObj.transform.position = (Vector3)pos;
-        boxObj.transform.SetParent(levelRoot);
+        int colorIndex = -1;
+        switch (color.ToLower())
+        {
+            case "red": colorIndex = 0; break;
+            case "blue": colorIndex = 1; break;
+            case "yellow": colorIndex = 2; break;
+        }
+        
+        GameObject prefabToSpawn = boxModels[colorIndex];
 
-        SetBoxColor(boxObj, color);
+        GameObject boxObj = Instantiate(prefabToSpawn, (Vector3)pos, Quaternion.identity);
+        boxObj.name = $"Box_{color}";
+        boxObj.transform.SetParent(levelRoot);
 
         PushBlocks pushBlocks = boxObj.AddComponent<PushBlocks>();
         pushBlocks.boxColor = color;
         pushBlocks.boxType = "box";
         pushBlocks.prefabReference = GetColorPrefab(color);
-        pushBlocks.moveSpeed = 99999f;
+        pushBlocks.moveSpeed = 10f;
     }
 
     private void SpawnBox1x2(Vector3Int mainPos, string color, Vector3Int rotation)
     {
-        GameObject boxObj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        boxObj.name = $"Box1x2_{color}";
-        boxObj.transform.position = (Vector3)mainPos - rotation;
+        GameObject boxObj = new GameObject($"Box1x2_{color}");
         boxObj.transform.SetParent(levelRoot);
+        boxObj.transform.position = mainPos - rotation;
 
-        SetBoxColor(boxObj, color);
+        int colorIndex = -1;
+        switch (color.ToLower())
+        {
+            case "red": colorIndex = 0; break;
+            case "blue": colorIndex = 1; break;
+            case "yellow": colorIndex = 2; break;
+        }
+
+        GameObject prefabToSpawn = boxModels[colorIndex];
+
+        GameObject visual1 = Instantiate(prefabToSpawn, (Vector3)mainPos, Quaternion.identity, boxObj.transform);
+        GameObject visual2 = Instantiate(prefabToSpawn, (Vector3)(mainPos - rotation), Quaternion.identity, boxObj.transform);
 
         PushBlocks pushBlocks = boxObj.AddComponent<PushBlocks>();
         pushBlocks.boxColor = color;
         pushBlocks.boxType = "1x2_box";
         pushBlocks.boxRotation = rotation;
         pushBlocks.prefabReference = GetColorPrefab(color);
-        pushBlocks.moveSpeed = 99999f;
-    }
-
-    private void SetBoxColor(GameObject obj, string color)
-    {
-        Renderer renderer = obj.GetComponent<Renderer>();
-        if (renderer != null)
-        {
-            renderer.material.color = color switch
-            {
-                "green" => Color.green,
-                "red" => Color.red,
-                "blue" => Color.blue,
-                "yellow" => Color.yellow,
-                _ => Color.white
-            };
-        }
+        pushBlocks.moveSpeed = 10f;
     }
 }

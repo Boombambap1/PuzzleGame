@@ -44,6 +44,7 @@ public class PlayerInput : MonoBehaviour
         playerObject = new Object("none", "player", gridPos, Vector3Int.forward, prefabReference);
         gameState.PlaceObjectAt(playerObject, gridPos);
         visualPosition = transform.position;
+        Debug.Log($"Player registered at {gridPos}, with visual position {visualPosition}");
     }
     
     void Update()

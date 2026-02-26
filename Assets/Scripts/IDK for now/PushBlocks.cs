@@ -47,11 +47,6 @@ public class PushBlocks : MonoBehaviour
         gameState.PlaceObjectAt(boxObject, gridPosition);
         visualPosition = transform.position;
 
-        if (boxType == "1x2_box")
-        {
-            CreateSecondaryVisual();
-            UpdateSecondaryVisual();
-        }
 
         // Subscribe to step events so we can queue positions after each step
         GamePhysics.OnStepComplete += OnStepComplete;
@@ -65,9 +60,6 @@ public class PushBlocks : MonoBehaviour
 
         if (gameState != null && boxObject != null)
             gameState.RemoveObjectFromGrid(boxObject.position);
-
-        if (secondaryVisual != null)
-            Destroy(secondaryVisual);
     }
 
     private void OnStepComplete(List<TickData> stepData)
@@ -127,32 +119,6 @@ public class PushBlocks : MonoBehaviour
         {
             isAnimating = false;
         }
-
-        UpdateSecondaryVisual();
-    }
-    
-    private void CreateSecondaryVisual()
-    {
-        if (secondaryVisual != null) return;
-
-        secondaryVisual = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        secondaryVisual.name = $"{gameObject.name}_Secondary";
-
-        BoxCollider collider = secondaryVisual.GetComponent<BoxCollider>();
-        if (collider != null) Destroy(collider);
-
-        MeshRenderer renderer = GetComponentInChildren<MeshRenderer>();
-        MeshRenderer secondaryRenderer = secondaryVisual.GetComponent<MeshRenderer>();
-        if (renderer != null && secondaryRenderer != null)
-            secondaryRenderer.sharedMaterial = renderer.sharedMaterial;
-    }
-
-    private void UpdateSecondaryVisual()
-    {
-        if (secondaryVisual == null || boxObject == null || !boxObject.IsAlive()) return;
-
-        if (!secondaryVisual.activeSelf) secondaryVisual.SetActive(true);
-        secondaryVisual.transform.position = boxObject.GetSecondaryPosition();
     }
     
     void OnDrawGizmos()
