@@ -66,7 +66,7 @@ public class GameState : MonoBehaviour
         
         if (objectGrid.ContainsValue(obj))
         {
-            RemoveObjectAt(obj.position);
+            RemoveObjectFromGrid(obj.position);
         }
         
         obj.position = pos;
@@ -87,9 +87,9 @@ public class GameState : MonoBehaviour
     }
     
     /// <summary>
-    /// Remove object at a position
+    /// Remove object from grid only (keeps it in allObjects for respawn tracking)
     /// </summary>
-    public void RemoveObjectAt(Vector3Int pos)
+    public void RemoveObjectFromGrid(Vector3Int pos)
     {
         if (objectGrid.TryGetValue(pos, out Object obj))
         {
@@ -97,14 +97,9 @@ public class GameState : MonoBehaviour
             {
                 objectGrid.Remove(occupiedPos);
             }
-            allObjects.Remove(obj);
-            
-            if (obj == player)
-            {
-                player = null;
-            }
+            // NOTE: intentionally NOT removing from allObjects or nulling player
         }
-    }
+}
     
     /// <summary>
     /// Move an object to a new position

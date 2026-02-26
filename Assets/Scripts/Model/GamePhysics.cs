@@ -4,7 +4,7 @@ using UnityEngine;
 public class GamePhysics : MonoBehaviour
 {
     // Constants
-    private const int DEATH_BOUND = -10;
+    private const int DEATH_BOUND = -5;
     private const int RESPAWN_HEIGHT = 10;
     private const int MOVEMENT_DISTANCE = 1;
     
@@ -16,6 +16,8 @@ public class GamePhysics : MonoBehaviour
     private int tickCount;
     private bool isProcessingStep;
     private List<TickData> currentStepData;
+    // Add at the top of the class
+    public static event System.Action<List<TickData>> OnStepComplete;
     
     void Awake()
     {
@@ -124,6 +126,7 @@ public class GamePhysics : MonoBehaviour
         // Check win conditions after step completes
         CheckWinCondition();
         
+        OnStepComplete?.Invoke(new List<TickData>(currentStepData));
         return new List<TickData>(currentStepData);
     }
     
@@ -172,7 +175,7 @@ public class GamePhysics : MonoBehaviour
             else
             {
                 consecutiveEmptyTicks++;
-                if (consecutiveEmptyTicks >= 1)
+                if (consecutiveEmptyTicks >= 2)
                 {
                     break;
                 }
@@ -400,7 +403,7 @@ public class GamePhysics : MonoBehaviour
                 {
                     Vector3Int respawnPosition = new Vector3Int(
                         spawnPos.Value.x,
-                        spawnPos.Value.y + RESPAWN_HEIGHT,
+                        spawnPos.Value.y + RESPAWN_HEIGHT,  // just 1 above the spawn block, so they're standing on it
                         spawnPos.Value.z
                     );
                     
@@ -533,17 +536,17 @@ public class GamePhysics : MonoBehaviour
         tickData.tasks.Add(task);
     }
     
-    /// <summary>
-    /// Kill an object and record it
-    /// </summary>
     private void KillObject(Object obj, TickData tickData)
     {
+        Vector3Int deathPos = obj.position;
         obj.alive = false;
+        
+        gameState.RemoveObjectFromGrid(deathPos); // grid only, stays in allObjects
         
         Task task = new Task(obj.color, TaskAction.Die, Vector3Int.zero);
         tickData.tasks.Add(task);
         
-        ObjectMovement movement = new ObjectMovement(obj, obj.position, obj.position, TaskAction.Die);
+        ObjectMovement movement = new ObjectMovement(obj, deathPos, deathPos, TaskAction.Die);
         tickData.movements.Add(movement);
     }
     

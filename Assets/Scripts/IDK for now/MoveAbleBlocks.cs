@@ -61,7 +61,7 @@ public class BoxObject : MonoBehaviour
         // Unregister when destroyed
         if (gameState != null && boxObject != null)
         {
-            gameState.RemoveObjectAt(boxObject.position);
+            gameState.RemoveObjectFromGrid(boxObject.position);
         }
     }
     
