@@ -653,6 +653,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0677a9e74310ed34f801896a8e333d31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  baseBlockModel: {fileID: 5529357807206855898, guid: f8a6cb35128b41941a23e44dd9a32b7c, type: 3}
+  spawnModels:
+  - {fileID: 2250164777029261472, guid: ac1cc6f6a5ddba44aa9a7808a28f5543, type: 3}
+  - {fileID: 1769570200876743827, guid: 28fe95b9c5cda8742bcac2bb4ac37af4, type: 3}
+  - {fileID: 8909080072162361254, guid: e52c8eca53e407940af61d9e08c0dafc, type: 3}
+  - {fileID: 7924393152487372067, guid: 63621e5de8e0cea4880dca33bd2d00a6, type: 3}
+  exitModels:
+  - {fileID: 352116044759652571, guid: 4e46dff8c6a263e4784ba992e81b800c, type: 3}
+  - {fileID: 5809505821944393449, guid: 0a6d776f0e298f34192e5da725d69f8a, type: 3}
+  - {fileID: 1217241576326551495, guid: 9da76f0c02a59d845a3a445378db5225, type: 3}
+  - {fileID: 3295270222398322934, guid: 49cf4892631a1ab4fb7c1937e6680054, type: 3}
+  boxModels:
+  - {fileID: 7669889387922469118, guid: a3db2c4cea82a4b49aac9e1d139b07ee, type: 3}
+  - {fileID: 8534552213175604834, guid: 79e84ab18582d5043b71f09d5c993f18, type: 3}
+  - {fileID: 1908607195543145452, guid: dd824d3596326724dbc60110bc38647e, type: 3}
+  playerModel: {fileID: 3909227696855938350, guid: 6d5f381b0eed6a9448cd5861bda22377, type: 3}
 --- !u!4 &400489720
 Transform:
   m_ObjectHideFlags: 0
