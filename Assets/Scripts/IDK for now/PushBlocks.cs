@@ -72,7 +72,17 @@ public class PushBlocks : MonoBehaviour
             {
                 if (movement.obj == boxObject)
                 {
-                    positionQueue.Enqueue((Vector3)movement.toPosition);
+                    if (movement.movementType == TaskAction.Respawn)
+                    {
+                        // Snap instantly, clear any queued movement
+                        positionQueue.Clear();
+                        visualPosition = (Vector3)movement.toPosition;
+                        transform.position = visualPosition;
+                    }
+                    else
+                    {
+                        positionQueue.Enqueue((Vector3)movement.toPosition);
+                    }
                 }
             }
         }
@@ -118,6 +128,15 @@ public class PushBlocks : MonoBehaviour
         else
         {
             isAnimating = false;
+        }
+    }
+    public void SnapToPosition()
+    {
+        positionQueue.Clear();
+        if (boxObject != null)
+        {
+            visualPosition = (Vector3)boxObject.position;
+            transform.position = visualPosition;
         }
     }
     

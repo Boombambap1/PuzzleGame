@@ -32,6 +32,42 @@ public class PlayerInput : MonoBehaviour
         
         RegisterPlayer();
         lastInputTime = -inputCooldown;
+        GamePhysics.OnStepComplete += OnStepComplete;
+    }
+
+    void OnDestroy()
+    {
+        GamePhysics.OnStepComplete -= OnStepComplete;
+    }
+
+    private void OnStepComplete(List<TickData> stepData)
+    {
+        if (playerObject == null) return;
+
+        foreach (TickData tick in stepData)
+        {
+            foreach (ObjectMovement movement in tick.movements)
+            {
+                if (movement.obj == playerObject)
+                {
+                    if (movement.movementType == TaskAction.Respawn)
+                    {
+                        positionQueue.Clear();
+                        visualPosition = (Vector3)movement.toPosition;
+                        transform.position = visualPosition;
+                        gameObject.SetActive(true);
+                    }
+                    else if (movement.movementType == TaskAction.Die)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        positionQueue.Enqueue((Vector3)movement.toPosition);
+                    }
+                }
+            }
+        }
     }
     
     private void RegisterPlayer()
@@ -44,27 +80,21 @@ public class PlayerInput : MonoBehaviour
         playerObject = new Object("none", "player", gridPos, Vector3Int.forward, prefabReference);
         gameState.PlaceObjectAt(playerObject, gridPos);
         visualPosition = transform.position;
-        Debug.Log($"Player registered at {gridPos}, with visual position {visualPosition}");
     }
     
     void Update()
     {
-        // Handle death visibility
-        if (playerObject != null)
+        // Auto-trigger respawn when animation finishes and respawn is pending
+        if (positionQueue.Count == 0 && gamePhysics.NeedsRespawn())
         {
-            if (playerObject.IsAlive() && !gameObject.activeSelf)
-            {
-                gameObject.SetActive(true);
-            }
-            if (!playerObject.IsAlive() && gameObject.activeSelf && !isAnimating)
-            {
-                gameObject.SetActive(false);
-            }
+            gamePhysics.StartStep(Vector3Int.zero);
+            return;
         }
-        
-        // Animate through queued positions one step at a time
+
+        // Animate through queued positions
         if (positionQueue.Count > 0)
         {
+            isAnimating = true;
             Vector3 targetPos = positionQueue.Peek();
             float step = moveSpeed * Time.deltaTime;
             visualPosition = Vector3.MoveTowards(visualPosition, targetPos, step);
@@ -76,49 +106,54 @@ public class PlayerInput : MonoBehaviour
                 transform.position = targetPos;
                 positionQueue.Dequeue();
             }
-            
-            isAnimating = true;
-            return;
         }
         else
         {
             isAnimating = false;
         }
-        
-        // Input
-        if (playerObject == null || !playerObject.IsAlive()) return;
+
+        // Handle death visibility
+        if (playerObject != null && !playerObject.IsAlive() && !isAnimating)
+        {
+            gameObject.SetActive(false);
+            return;
+        }
+
+        if (playerObject != null && playerObject.IsAlive() && !gameObject.activeSelf)
+            gameObject.SetActive(true);
+
+        // Input - always checked, even during animation
         if (Time.time - lastInputTime < inputCooldown) return;
-        
+
         Vector3Int inputDirection = Vector3Int.zero;
         if (Input.GetKeyDown(KeyCode.W)) inputDirection = Vector3Int.forward;
         else if (Input.GetKeyDown(KeyCode.S)) inputDirection = Vector3Int.back;
         else if (Input.GetKeyDown(KeyCode.A)) inputDirection = Vector3Int.left;
         else if (Input.GetKeyDown(KeyCode.D)) inputDirection = Vector3Int.right;
-        
+
         if (inputDirection != Vector3Int.zero)
         {
-            ProcessMovement(inputDirection);
-            lastInputTime = Time.time;
+            // Always snap regardless of alive state
+            while (positionQueue.Count > 0)
+                visualPosition = positionQueue.Dequeue();
+            transform.position = visualPosition;
+
+            foreach (PushBlocks box in FindObjectsOfType<PushBlocks>())
+                box.SnapToPosition();
+
+            // Only process new input if player is alive
+            if (playerObject.IsAlive())
+            {
+                if (playerObject == null || !playerObject.IsAlive()) return;
+                ProcessMovement(inputDirection);
+                lastInputTime = Time.time;
+            }
         }
     }
     
     private void ProcessMovement(Vector3Int direction)
     {
-        List<TickData> stepData = gamePhysics.StartStep(direction);
-        
-        if (stepData == null) return;
-        
-        // Queue up each tick's player position sequentially
-        foreach (TickData tick in stepData)
-        {
-            foreach (ObjectMovement movement in tick.movements)
-            {
-                if (movement.obj == playerObject)
-                {
-                    positionQueue.Enqueue(movement.toPosition);
-                }
-            }
-        }
+        gamePhysics.StartStep(direction);
     }
     
     public void UpdateVisualPosition()

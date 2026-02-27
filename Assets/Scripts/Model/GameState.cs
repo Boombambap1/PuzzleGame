@@ -179,26 +179,21 @@ public class GameState : MonoBehaviour
         {
             Vector3Int belowPos = occupiedPos + Vector3Int.down;
             
-            Debug.Log($"[IsObjectInFreefall] Checking {obj.type} at {occupiedPos}, below is {belowPos}");
             
             GeoType geoBelow = geoState.GetGeoTypeAt(belowPos);
-            Debug.Log($"[IsObjectInFreefall] Geo below is: {geoBelow}");
             
             if (geoBelow == GeoType.Block || geoBelow == GeoType.Exit || geoBelow == GeoType.Spawn)
             {
-                Debug.Log($"[IsObjectInFreefall] Standing on {geoBelow}, not in freefall");
                 return false;
             }
             
             Object objBelow = GetObjectAt(belowPos);
             if (objBelow != null && objBelow.IsAlive())
             {
-                Debug.Log($"[IsObjectInFreefall] Standing on {objBelow.type}, not in freefall");
                 return false;
             }
         }
         
-        Debug.Log($"[IsObjectInFreefall] Nothing below, IS in freefall");
         return true;
     }
     
@@ -248,7 +243,6 @@ public class GameState : MonoBehaviour
         }
         
         winConditions[prefab].Add(position);
-        Debug.Log($"[GameState] Registered win condition: {prefab.name} must reach {position}");
     }
     
     /// <summary>
@@ -261,18 +255,15 @@ public class GameState : MonoBehaviour
         
         if (winConditions.Count == 0)
         {
-            Debug.Log("[WinCheck] No win conditions registered");
             return false;
         }
         
-        Debug.Log($"[WinCheck] Checking {winConditions.Count} prefab groups...");
         
         foreach (var kvp in winConditions)
         {
             GameObject requiredPrefab = kvp.Key;
             List<Vector3Int> requiredPositions = kvp.Value;
             
-            Debug.Log($"[WinCheck] Checking {requiredPrefab.name}: needs {requiredPositions.Count} positions");
             
             foreach (Vector3Int exitPos in requiredPositions)
             {
@@ -282,13 +273,11 @@ public class GameState : MonoBehaviour
                 
                 if (objAtPosition == null)
                 {
-                    Debug.Log($"[WinCheck] ✗ No object at {checkPos} above exit {exitPos} (need {requiredPrefab.name})");
                     return false;
                 }
                 
                 if (!objAtPosition.IsAlive())
                 {
-                    Debug.Log($"[WinCheck] ✗ Dead object at {checkPos} (need {requiredPrefab.name})");
                     return false;
                 }
                 
@@ -296,11 +285,10 @@ public class GameState : MonoBehaviour
                 if (objAtPosition.prefab != requiredPrefab)
                 {
                     string actualPrefab = objAtPosition.prefab != null ? objAtPosition.prefab.name : "NULL";
-                    Debug.Log($"[WinCheck] ✗ Wrong prefab at {checkPos}: {actualPrefab} (need {requiredPrefab.name})");
+
                     return false;
                 }
                 
-                Debug.Log($"[WinCheck] ✓ Correct {requiredPrefab.name} at {checkPos} (above exit at {exitPos})");
             }
         }
         

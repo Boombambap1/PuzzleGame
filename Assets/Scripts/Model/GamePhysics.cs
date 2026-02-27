@@ -4,9 +4,10 @@ using UnityEngine;
 public class GamePhysics : MonoBehaviour
 {
     // Constants
-    private const int DEATH_BOUND = -5;
+    private const int DEATH_BOUND = -10;
     private const int RESPAWN_HEIGHT = 10;
     private const int MOVEMENT_DISTANCE = 1;
+    private bool needsRespawn = false;
     
     // References
     private GeoState geoState;
@@ -16,7 +17,7 @@ public class GamePhysics : MonoBehaviour
     private int tickCount;
     private bool isProcessingStep;
     private List<TickData> currentStepData;
-    // Add at the top of the class
+
     public static event System.Action<List<TickData>> OnStepComplete;
     
     void Awake()
@@ -28,28 +29,20 @@ public class GamePhysics : MonoBehaviour
     
     void Start()
     {
-        // Apply initial gravity after all objects register
         Invoke("ApplyInitialGravity", 0.1f);
     }
     
-    /// <summary>
-    /// Apply initial gravity when scene loads
-    /// </summary>
     private void ApplyInitialGravity()
     {
         ApplyGravity();
     }
     
-    /// <summary>
-    /// Apply gravity to all objects until they reach stable ground
-    /// </summary>
     public void ApplyGravity()
     {
         isProcessingStep = true;
         tickCount = 0;
         currentStepData.Clear();
         
-        // Keep processing until nothing is falling
         bool objectsFalling = true;
         int maxIterations = 50;
         int iteration = 0;
@@ -59,9 +52,7 @@ public class GamePhysics : MonoBehaviour
             iteration++;
             tickCount++;
             TickData tickData = new TickData(tickCount);
-            
             objectsFalling = ProcessFalling(tickData);
-            
             if (objectsFalling)
             {
                 currentStepData.Add(tickData);
@@ -70,69 +61,67 @@ public class GamePhysics : MonoBehaviour
         
         isProcessingStep = false;
     }
+
+    public bool NeedsRespawn() => needsRespawn;
     
-    /// <summary>
-    /// Initiates a step based on player input direction
-    /// </summary>
     public List<TickData> StartStep(Vector3Int playerInput)
     {
-        // Don't start a new step if one is already processing
-        if (isProcessingStep)
-        {
-            return null;
-        }
-        
-        // Get player object
+        if (isProcessingStep) return null;
+
         Object player = gameState.GetPlayer();
-        if (player == null)
+        if (player == null) return null;
+
+        // Handle pending respawn
+        if (needsRespawn)
         {
-            return null;
+            needsRespawn = false;
+            isProcessingStep = true;
+            tickCount = 0;
+            currentStepData.Clear();
+
+            TickData respawnTick = new TickData(tickCount);
+            ProcessRespawning(respawnTick);
+            currentStepData.Add(respawnTick);
+
+            Step();
+
+            isProcessingStep = false;
+            OnStepComplete?.Invoke(new List<TickData>(currentStepData));
+            return new List<TickData>(currentStepData);
         }
+
+        // Only process normal input if player is alive
+        if (playerInput == Vector3Int.zero) return null;
+        if (!player.IsAlive()) return null;
         
-        if (!player.IsAlive())
-        {
-            return null;
-        }
-        
-        // Calculate target position
         Vector3Int moveVector = playerInput;
         Vector3Int targetPos = player.position + moveVector;
         
-        // Check if move is valid (not into a wall)
         if (!IsValidMove(targetPos, moveVector))
         {
             return null;
         }
         
-        // Initialize step
         isProcessingStep = true;
         tickCount = 0;
         currentStepData.Clear();
         
-        // Reset movement tracking for all objects
         ResetAllMovements();
         
-        // Execute player movement
         TickData firstTick = new TickData(tickCount);
         ExecutePlayerMove(player, moveVector, targetPos, firstTick);
         currentStepData.Add(firstTick);
         
-        // Process the rest of the step
         Step();
         
-        // Finish step
         isProcessingStep = false;
         
-        // Check win conditions after step completes
         CheckWinCondition();
         
         OnStepComplete?.Invoke(new List<TickData>(currentStepData));
         return new List<TickData>(currentStepData);
     }
     
-    /// <summary>
-    /// Check if win conditions are met and trigger win event
-    /// </summary>
     private void CheckWinCondition()
     {
         if (gameState.CheckWinConditions())
@@ -144,17 +133,11 @@ public class GamePhysics : MonoBehaviour
         }
     }
     
-    /// <summary>
-    /// Called when level is completed
-    /// </summary>
     private void OnLevelComplete()
     {
         SendMessage("OnWinConditionMet", SendMessageOptions.DontRequireReceiver);
     }
     
-    /// <summary>
-    /// Continues stepping until stable state is reached
-    /// </summary>
     private void Step()
     {
         int maxTicks = 100;
@@ -183,23 +166,25 @@ public class GamePhysics : MonoBehaviour
         }
     }
     
-    /// <summary>
-    /// Processes a single tick - returns true if any movement occurred
-    /// </summary>
     private bool Tick(TickData tickData)
     {
         bool anyMovement = false;
         
         anyMovement |= ProcessBoxSliding(tickData);
         anyMovement |= ProcessFalling(tickData);
-        anyMovement |= ProcessRespawning(tickData);
+        
+        // Flag if anything needs respawning next step
+        foreach (Object obj in gameState.GetAllObjects())
+        {
+            if (!obj.IsAlive() && obj.prefab != null)
+            {
+                needsRespawn = true;
+            }
+        }
         
         return anyMovement;
     }
     
-    /// <summary>
-    /// Reset movement tracking for all objects at the start of a tick
-    /// </summary>
     private void ResetAllMovements()
     {
         List<Object> allObjects = gameState.GetAllObjects();
@@ -209,9 +194,6 @@ public class GamePhysics : MonoBehaviour
         }
     }
     
-    /// <summary>
-    /// Executes the initial player movement
-    /// </summary>
     private void ExecutePlayerMove(Object player, Vector3Int direction, Vector3Int targetPos, TickData tickData)
     {
         Vector3Int abovePlayerOldPos = player.position + Vector3Int.up;
@@ -223,7 +205,6 @@ public class GamePhysics : MonoBehaviour
         if (targetObject != null)
         {
             Vector3Int pushTarget = targetPos + direction;
-            
             if (IsValidMove(pushTarget, direction))
             {
                 PushObject(targetObject, direction, tickData);
@@ -243,16 +224,9 @@ public class GamePhysics : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Move a specific carried object (after the carrier has already moved)
-    /// </summary>
     private void MoveCarriedObjectDirect(Object carriedObject, Vector3Int direction, TickData tickData)
     {
-        // Skip if object has already moved this tick
-        if (carriedObject.movement != Vector3Int.zero)
-        {
-            return;
-        }
+        if (carriedObject.movement != Vector3Int.zero) return;
 
         Vector3Int aboveCarriedMain = carriedObject.position + Vector3Int.up;
         Object nextCarriedMain = gameState.GetObjectAt(aboveCarriedMain);
@@ -265,10 +239,7 @@ public class GamePhysics : MonoBehaviour
             nextCarriedSecondary = gameState.GetObjectAt(aboveCarriedSecondary);
         }
 
-        if (nextCarriedSecondary == nextCarriedMain)
-        {
-            nextCarriedSecondary = null;
-        }
+        if (nextCarriedSecondary == nextCarriedMain) nextCarriedSecondary = null;
 
         Vector3Int carriedTarget = carriedObject.position + direction;
         bool canMove = IsValidMove(carriedTarget, direction) && IsCellFreeOrSelf(carriedTarget, carriedObject);
@@ -290,14 +261,10 @@ public class GamePhysics : MonoBehaviour
             MoveObject(carriedObject, carriedTarget, TaskAction.Move, tickData);
 
             if (nextCarriedMain != null && nextCarriedMain.IsAlive() && nextCarriedMain.movement == Vector3Int.zero)
-            {
                 MoveCarriedObjectDirect(nextCarriedMain, direction, tickData);
-            }
 
             if (nextCarriedSecondary != null && nextCarriedSecondary.IsAlive() && nextCarriedSecondary.movement == Vector3Int.zero)
-            {
                 MoveCarriedObjectDirect(nextCarriedSecondary, direction, tickData);
-            }
         }
     }
 
@@ -307,28 +274,11 @@ public class GamePhysics : MonoBehaviour
         return objAtPos == null || objAtPos == self || !objAtPos.IsAlive();
     }
     
-    /// <summary>
-    /// Process boxes that are sliding from being pushed
-    /// </summary>
     private bool ProcessBoxSliding(TickData tickData)
     {
-        bool anySliding = false;
-        List<Object> allObjects = gameState.GetAllObjects();
-        
-        foreach (Object obj in allObjects)
-        {
-            if (obj.type == "box" && obj.IsAlive())
-            {
-                // Future: sliding mechanics
-            }
-        }
-        
-        return anySliding;
+        return false;
     }
     
-    /// <summary>
-    /// Process falling for all objects
-    /// </summary>
     private bool ProcessFalling(TickData tickData)
     {
         bool anyFalling = false;
@@ -342,8 +292,6 @@ public class GamePhysics : MonoBehaviour
             
             if (inFreefall)
             {
-                Vector3Int belowPos = obj.position + Vector3Int.down;
-                
                 if (obj.position.y <= DEATH_BOUND)
                 {
                     KillObject(obj, tickData);
@@ -351,6 +299,7 @@ public class GamePhysics : MonoBehaviour
                 }
                 else
                 {
+                    Vector3Int belowPos = obj.position + Vector3Int.down;
                     bool canFall = IsValidMove(belowPos, Vector3Int.down) && gameState.GetObjectAt(belowPos) == null;
 
                     if (obj.type == "1x2_box")
@@ -374,21 +323,13 @@ public class GamePhysics : MonoBehaviour
         return anyFalling;
     }
     
-    /// <summary>
-    /// Process respawning for dead objects that can respawn
-    /// </summary>
     private bool ProcessRespawning(TickData tickData)
     {
         bool anyRespawning = false;
         List<Object> allObjects = gameState.GetAllObjects();
         
-        Debug.Log($"[ProcessRespawning] Checking {allObjects.Count} objects");
-        
         foreach (Object obj in allObjects)
         {
-            Debug.Log($"[Respawn Check] {obj.color} {obj.type}, alive: {obj.alive}, prefab: {(obj.prefab != null ? obj.prefab.name : "NULL")}");
-            
-            // Check if object is dead and can respawn (boxes or player)
             if (!obj.IsAlive() && (obj.type == "box" || obj.type == "player" || obj.type == "1x2_box"))
             {
                 if (obj.prefab == null)
@@ -403,11 +344,10 @@ public class GamePhysics : MonoBehaviour
                 {
                     Vector3Int respawnPosition = new Vector3Int(
                         spawnPos.Value.x,
-                        spawnPos.Value.y + RESPAWN_HEIGHT,  // just 1 above the spawn block, so they're standing on it
+                        spawnPos.Value.y + RESPAWN_HEIGHT,
                         spawnPos.Value.z
                     );
                     
-                    Debug.Log($"[Respawn] Respawning {obj.type} at {respawnPosition}");
                     RespawnObject(obj, respawnPosition, tickData);
                     anyRespawning = true;
                 }
@@ -421,61 +361,38 @@ public class GamePhysics : MonoBehaviour
         return anyRespawning;
     }
     
-    /// <summary>
-    /// Check if a position is valid for movement (not blocked by a wall)
-    /// </summary>
     private bool IsValidMove(Vector3Int pos, Vector3Int direction)
     {
-        if (direction == Vector3Int.zero)
-        {
-            return false;
-        }
+        if (direction == Vector3Int.zero) return false;
 
         GeoType geoType = geoState.GetGeoTypeAt(pos);
-        if (geoType == GeoType.Block || geoType == GeoType.Spawn || geoType == GeoType.Exit)
-        {
-            return false;
-        }
+        if (geoType == GeoType.Block || geoType == GeoType.Exit) return false;
+        if (geoType == GeoType.Spawn && direction != Vector3Int.down) return false;
 
         Object objAtPos = gameState.GetObjectAt(pos);
-        if (objAtPos == null || !objAtPos.IsAlive())
-        {
-            return true;
-        }
+        if (objAtPos == null || !objAtPos.IsAlive()) return true;
 
         Vector3Int nextPos = pos + direction;
         if (objAtPos.type == "1x2_box")
         {
             if (pos == objAtPos.position && direction == objAtPos.rotation)
-            {
                 nextPos = objAtPos.GetSecondaryPosition() + direction;
-            }
             else if (pos == objAtPos.GetSecondaryPosition() && direction == -objAtPos.rotation)
-            {
                 nextPos = objAtPos.position + direction;
-            }
         }
         return IsValidMove(nextPos, direction);
     }
 
-    /// <summary>
-    /// Push an object in a direction
-    /// </summary>
     private void PushObject(Object obj, Vector3Int direction, TickData tickData)
     {
-        // Skip if object has already moved this tick
         if (obj.movement != Vector3Int.zero) return;
 
         Vector3Int targetPos = obj.position + direction;
         
-        // Recursively push any objects blocking the target position
         Object blockingObject = gameState.GetObjectAt(targetPos);
         if (blockingObject != null && blockingObject.IsAlive() && blockingObject != obj)
-        {
             PushObject(blockingObject, direction, tickData);
-        }
         
-        // For 1x2 boxes, check and push objects blocking the secondary position
         if (obj.type == "1x2_box")
         {
             Vector3Int secondaryPos = obj.GetSecondaryPosition();
@@ -483,9 +400,7 @@ public class GamePhysics : MonoBehaviour
             Object blockingSecondary = gameState.GetObjectAt(secondaryTarget);
             if (blockingSecondary != null && blockingSecondary.IsAlive() && 
                 blockingSecondary != obj && blockingSecondary != blockingObject)
-            {
                 PushObject(blockingSecondary, direction, tickData);
-            }
         }
 
         Vector3Int aboveObjOldPos1 = obj.position + Vector3Int.up;
@@ -498,35 +413,23 @@ public class GamePhysics : MonoBehaviour
             carriedByPushed2 = gameState.GetObjectAt(aboveObjOldPos2);
         }
         
-        if (obj.type == "1x2_box" && carriedByPushed2 == carriedByPushed1)
-        {
-            carriedByPushed2 = null;
-        }
+        if (obj.type == "1x2_box" && carriedByPushed2 == carriedByPushed1) carriedByPushed2 = null;
 
         MoveObject(obj, targetPos, TaskAction.Slide, tickData);
         
         if (carriedByPushed1 != null && carriedByPushed1.IsAlive() && carriedByPushed1.movement == Vector3Int.zero)
-        {
             MoveCarriedObjectDirect(carriedByPushed1, direction, tickData);
-        }
 
         if (obj.type == "1x2_box" && carriedByPushed2 != null && carriedByPushed2.IsAlive() && carriedByPushed2.movement == Vector3Int.zero)
-        {
             MoveCarriedObjectDirect(carriedByPushed2, direction, tickData);
-        }
     }
     
-    /// <summary>
-    /// Move an object to a new position and record it
-    /// </summary>
     private void MoveObject(Object obj, Vector3Int targetPos, TaskAction actionType, TickData tickData)
     {
         Vector3Int fromPos = obj.position;
         Vector3Int moveDir = targetPos - fromPos;
         
         gameState.MoveObjectTo(obj, targetPos);
-        
-        // Track this movement
         obj.movement += moveDir;
         
         ObjectMovement movement = new ObjectMovement(obj, fromPos, targetPos, actionType);
@@ -540,8 +443,7 @@ public class GamePhysics : MonoBehaviour
     {
         Vector3Int deathPos = obj.position;
         obj.alive = false;
-        
-        gameState.RemoveObjectFromGrid(deathPos); // grid only, stays in allObjects
+        gameState.RemoveObjectFromGrid(deathPos);
         
         Task task = new Task(obj.color, TaskAction.Die, Vector3Int.zero);
         tickData.tasks.Add(task);
@@ -550,9 +452,6 @@ public class GamePhysics : MonoBehaviour
         tickData.movements.Add(movement);
     }
     
-    /// <summary>
-    /// Respawn an object at a position
-    /// </summary>
     private void RespawnObject(Object obj, Vector3Int spawnPos, TickData tickData)
     {
         obj.alive = true;
