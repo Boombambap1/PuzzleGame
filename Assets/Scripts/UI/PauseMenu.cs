@@ -14,6 +14,7 @@ public class PauseMenu : MonoBehaviour
     }
     private PostProcessVolume ppVolume;
     private OptionsMenuTab tabToOpen;
+    [SerializeField] private LevelManager levelManager;
     [SerializeField] string optionsMenuSceneName = "OptionsMenu";
     [SerializeField] string mainMenuSceneName = "MainMenu";
     bool paused = false;
@@ -76,6 +77,7 @@ public class PauseMenu : MonoBehaviour
             return;
         }
         SceneManager.sceneLoaded -= OnOptionsMenuLoaded;
+        PlayerPrefs.SetInt("StartLevel", levelManager.currentLevelIndex);
         OptionsMenu optionsMenu = FindObjectOfType<OptionsMenu>();
         switch (tabToOpen)
         {

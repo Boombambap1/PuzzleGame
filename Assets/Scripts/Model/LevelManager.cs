@@ -10,6 +10,7 @@ public class LevelManager : MonoBehaviour
     [Header("References")]
     public LevelJsonLoader jsonLoader;
     public GamePhysics gamePhysics;
+    [SerializeField] private PauseMenu pauseMenu;
 
     [Header("Scene Names")]
     [SerializeField] string mainMenuSceneName = "MainMenu";
@@ -114,6 +115,7 @@ public class LevelManager : MonoBehaviour
     {
         Debug.Log("Restarting level...");
         LoadLevel(currentLevelIndex);
+        pauseMenu.Resume();
     }
 
     public void ReturnToMainMenu()

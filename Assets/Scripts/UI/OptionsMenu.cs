@@ -10,6 +10,7 @@ public class OptionsMenu : MonoBehaviour
     public Button keybindsButton;
     public Button mechanicsButton;
 
+    [SerializeField] string gameSceneName = "Level 1";
     [SerializeField] private Color unselectedButton = new Color(200, 200, 200);
     [SerializeField] private Color selectedButton = Color.white;
 
