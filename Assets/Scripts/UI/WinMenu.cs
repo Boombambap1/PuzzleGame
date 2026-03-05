@@ -9,6 +9,12 @@ public class WinMenu : MonoBehaviour
     [SerializeField] private LevelManager levelManager;
     [SerializeField] string mainMenuSceneName = "MainMenu";
 
+    void Start()
+    {
+        ppVolume = Camera.main.gameObject.GetComponent<PostProcessVolume>();
+        ppVolume.enabled = false;
+    }
+
     public void LevelComplete()
     {
         winMenuPanel.SetActive(true);
