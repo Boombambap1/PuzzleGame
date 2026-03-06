@@ -7,7 +7,6 @@ public class GamePhysics : MonoBehaviour
     private const int DEATH_BOUND = -10;
     private const int RESPAWN_HEIGHT = 10;
     private const int MOVEMENT_DISTANCE = 1;
-    private bool needsRespawn = false;
 
     // References
     private GeoState geoState;
@@ -62,19 +61,27 @@ public class GamePhysics : MonoBehaviour
         isProcessingStep = false;
     }
 
-    public bool NeedsRespawn() => needsRespawn;
+    public bool NeedsRespawn()
+    {
+        foreach (Object obj in gameState.GetAllObjects())
+        {
+            if (!obj.IsAlive() && obj.prefab != null)
+                return true;
+        }
+        return false;
+    }
 
     public List<TickData> StartStep(Vector3Int playerInput)
     {
         if (isProcessingStep) return null;
+        Debug.Log($"[StartStep] input={playerInput}, NeedsRespawn={NeedsRespawn()}");
 
         Object player = gameState.GetPlayer();
         if (player == null) return null;
 
-        // Handle pending respawn
-        if (needsRespawn)
+        // Handle respawn before anything else
+        if (NeedsRespawn())
         {
-            needsRespawn = false;
             isProcessingStep = true;
             tickCount = 0;
             currentStepData.Clear();
@@ -90,7 +97,6 @@ public class GamePhysics : MonoBehaviour
             return new List<TickData>(currentStepData);
         }
 
-        // Only process normal input if player is alive
         if (playerInput == Vector3Int.zero) return null;
         if (!player.IsAlive()) return null;
 
@@ -178,7 +184,7 @@ public class GamePhysics : MonoBehaviour
         {
             if (!obj.IsAlive() && obj.prefab != null)
             {
-                needsRespawn = true;
+
             }
         }
 
@@ -327,9 +333,10 @@ public class GamePhysics : MonoBehaviour
     {
         bool anyRespawning = false;
         List<Object> allObjects = gameState.GetAllObjects();
-
+        
         foreach (Object obj in allObjects)
         {
+            Debug.Log($"[ProcessRespawning] checking {obj.type} alive:{obj.IsAlive()}");
             if (!obj.IsAlive() && (obj.type == "box" || obj.type == "player" || obj.type == "1x2_box"))
             {
                 if (obj.prefab == null)

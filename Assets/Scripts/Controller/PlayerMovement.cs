@@ -84,11 +84,30 @@ public class PlayerInput : MonoBehaviour
     
     void Update()
     {
-        // Auto-trigger respawn when animation finishes and respawn is pending
-        if (positionQueue.Count == 0 && gamePhysics.NeedsRespawn())
+        // Auto-trigger respawn when all animations are done and something needs respawning
+        if (gamePhysics.NeedsRespawn() && positionQueue.Count == 0)
         {
-            gamePhysics.StartStep(Vector3Int.zero);
-            return;
+            Debug.Log($"[AutoRespawn] triggered, allBoxesDone check starting");
+            bool allBoxesDone = true;
+            foreach (PushBlocks box in FindObjectsOfType<PushBlocks>(true))
+            {
+                if (!box.IsQueueEmpty())
+                {
+                    allBoxesDone = false;
+                    break;
+                }
+            }
+
+            if (allBoxesDone)
+            {
+                Debug.Log($"[AutoRespawn] triggered, allBoxesDone check starting");
+                gamePhysics.StartStep(Vector3Int.zero);
+                return;
+            }
+            else
+            {
+                Debug.Log($"[AutoRespawn] boxes not done yet");
+            }
         }
 
         // Animate through queued positions
@@ -133,7 +152,6 @@ public class PlayerInput : MonoBehaviour
 
         if (inputDirection != Vector3Int.zero)
         {
-            // Always snap regardless of alive state
             while (positionQueue.Count > 0)
                 visualPosition = positionQueue.Dequeue();
             transform.position = visualPosition;
@@ -141,12 +159,14 @@ public class PlayerInput : MonoBehaviour
             foreach (PushBlocks box in FindObjectsOfType<PushBlocks>())
                 box.SnapToPosition();
 
-            // Only process new input if player is alive
             if (playerObject.IsAlive())
             {
-                if (playerObject == null || !playerObject.IsAlive()) return;
                 ProcessMovement(inputDirection);
                 lastInputTime = Time.time;
+            }
+            else if (gamePhysics.NeedsRespawn())
+            {
+                gamePhysics.StartStep(Vector3Int.zero);
             }
         }
     }

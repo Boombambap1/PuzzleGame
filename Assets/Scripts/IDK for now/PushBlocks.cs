@@ -22,9 +22,16 @@ public class PushBlocks : MonoBehaviour
     public Object boxObject;
     
     private Vector3 visualPosition;
-    private bool isAnimating = false;
-    private GameObject secondaryVisual;
-    
+    private bool justDied = false;
+    public bool IsQueueEmpty()
+    {
+        if (boxObject != null && !boxObject.IsAlive())
+    {
+        positionQueue.Clear();
+        return true;
+    }
+    return positionQueue.Count == 0;
+    }
     private Queue<Vector3> positionQueue = new Queue<Vector3>();
 
     void Start()
@@ -47,11 +54,7 @@ public class PushBlocks : MonoBehaviour
         gameState.PlaceObjectAt(boxObject, gridPosition);
         visualPosition = transform.position;
 
-
-        // Subscribe to step events so we can queue positions after each step
         GamePhysics.OnStepComplete += OnStepComplete;
-        
-        Debug.Log($"PushBlock registered: {boxColor} {boxType} at {gridPosition}, prefab: {(prefabReference != null ? prefabReference.name : "NONE")}");
     }
 
     void OnDestroy()
@@ -72,12 +75,18 @@ public class PushBlocks : MonoBehaviour
             {
                 if (movement.obj == boxObject)
                 {
+                    Debug.Log($"Box received: {movement.movementType} to {movement.toPosition}");
                     if (movement.movementType == TaskAction.Respawn)
                     {
-                        // Snap instantly, clear any queued movement
                         positionQueue.Clear();
                         visualPosition = (Vector3)movement.toPosition;
                         transform.position = visualPosition;
+                        gameObject.SetActive(true);
+                    }
+                    else if (movement.movementType == TaskAction.Die)
+                    {
+                        justDied = true;
+                        goto doneProcessing;
                     }
                     else
                     {
@@ -86,37 +95,21 @@ public class PushBlocks : MonoBehaviour
                 }
             }
         }
+        doneProcessing:;
     }
     
     void Update()
     {
         if (boxObject == null) return;
 
-        // Handle respawn: re-enable and snap to new position
-        if (boxObject.IsAlive() && !gameObject.activeSelf)
-        {
-            gameObject.SetActive(true);
-            positionQueue.Clear();
-            visualPosition = boxObject.position;
-            transform.position = visualPosition;
-        }
-
-        // Hide if dead and done animating
-        if (!boxObject.IsAlive() && positionQueue.Count == 0)
-        {
-            gameObject.SetActive(false);
-            if (secondaryVisual != null) secondaryVisual.SetActive(false);
-            return;
-        }
-
-        // Animate through queued positions
+        // Animate through queued positions first, always
         if (positionQueue.Count > 0)
         {
+            gameObject.SetActive(true);
             Vector3 targetPos = positionQueue.Peek();
             float step = moveSpeed * Time.deltaTime;
             visualPosition = Vector3.MoveTowards(visualPosition, targetPos, step);
             transform.position = visualPosition;
-            isAnimating = true;
 
             if (Vector3.Distance(visualPosition, targetPos) < 0.01f)
             {
@@ -124,12 +117,20 @@ public class PushBlocks : MonoBehaviour
                 transform.position = targetPos;
                 positionQueue.Dequeue();
             }
+            return; // nothing else runs while animating
         }
-        else
+
+        // Queue is empty, NOW check alive state
+        if (!boxObject.IsAlive())
         {
-            isAnimating = false;
+            gameObject.SetActive(false);
+            return;
         }
+
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);
     }
+
     public void SnapToPosition()
     {
         positionQueue.Clear();
