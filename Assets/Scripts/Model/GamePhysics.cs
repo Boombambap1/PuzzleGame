@@ -122,13 +122,12 @@ public class GamePhysics : MonoBehaviour
 
         isProcessingStep = false;
 
-        CheckWinCondition();
 
         OnStepComplete?.Invoke(new List<TickData>(currentStepData));
         return new List<TickData>(currentStepData);
     }
 
-    private void CheckWinCondition()
+    public void CheckWinCondition()
     {
         if (gameState.CheckWinConditions())
         {

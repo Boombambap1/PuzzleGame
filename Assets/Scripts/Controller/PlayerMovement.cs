@@ -21,6 +21,7 @@ public class PlayerInput : MonoBehaviour
     private Queue<Vector3> positionQueue = new Queue<Vector3>();
     private Vector3 visualPosition;
     private bool isAnimating = false;
+    private bool pendingWinCheck = false;
     
     void Start()
     {
@@ -42,6 +43,7 @@ public class PlayerInput : MonoBehaviour
 
     private void OnStepComplete(List<TickData> stepData)
     {
+        pendingWinCheck = true;
         if (playerObject == null) return;
 
         foreach (TickData tick in stepData)
@@ -129,6 +131,26 @@ public class PlayerInput : MonoBehaviour
         else
         {
             isAnimating = false;
+        }
+        // Check win condition after all animations finish
+        if (pendingWinCheck && positionQueue.Count == 0 && !gamePhysics.NeedsRespawn())
+        {
+            Debug.Log($"Win check firing, queue={positionQueue.Count}");
+            bool allBoxesDone = true;
+            foreach (PushBlocks box in FindObjectsOfType<PushBlocks>(true))
+            {
+                if (!box.IsQueueEmpty())
+                {
+                    allBoxesDone = false;
+                    break;
+                }
+            }
+
+            if (allBoxesDone)
+            {
+                pendingWinCheck = false;
+                gamePhysics.CheckWinCondition();
+            }
         }
 
         // Handle death visibility
