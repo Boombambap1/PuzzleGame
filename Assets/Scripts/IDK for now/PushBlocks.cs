@@ -22,15 +22,9 @@ public class PushBlocks : MonoBehaviour
     public Object boxObject;
     
     private Vector3 visualPosition;
-    private bool justDied = false;
     public bool IsQueueEmpty()
     {
-        if (boxObject != null && !boxObject.IsAlive())
-    {
-        positionQueue.Clear();
-        return true;
-    }
-    return positionQueue.Count == 0;
+        return positionQueue.Count == 0;
     }
     private Queue<Vector3> positionQueue = new Queue<Vector3>();
 
@@ -61,8 +55,10 @@ public class PushBlocks : MonoBehaviour
     {
         GamePhysics.OnStepComplete -= OnStepComplete;
 
-        if (gameState != null && boxObject != null)
+        if (gameState != null && boxObject != null && gameState.GetObjectAt(boxObject.position) == boxObject)
+        {
             gameState.RemoveObjectFromGrid(boxObject.position);
+        }
     }
 
     private void OnStepComplete(List<TickData> stepData)
@@ -85,7 +81,7 @@ public class PushBlocks : MonoBehaviour
                     }
                     else if (movement.movementType == TaskAction.Die)
                     {
-                        justDied = true;
+                        // Object died - no more movements will come after this
                         goto doneProcessing;
                     }
                     else

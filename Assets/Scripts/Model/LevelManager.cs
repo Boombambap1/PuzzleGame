@@ -66,6 +66,13 @@ public class LevelManager : MonoBehaviour
             return;
         }
 
+        // Cancel any pending invokes to prevent conflicts
+        CancelInvoke();
+        if (gamePhysics != null)
+        {
+            gamePhysics.CancelInvoke();
+        }
+
         currentLevelIndex = levelIndex;
         levelComplete = false;
 

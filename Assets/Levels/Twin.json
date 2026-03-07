@@ -1,98 +1,115 @@
-[
-	{
-		"position": {
-			"x": 0,
-			"y": 0,
-			"z": 0
-		},
-		"tile_id": 5
-	},
-	{
-		"position": {
-			"x": 2,
-			"y": 0,
-			"z": 0
-		},
-		"tile_id": 6
-	},
-	{
-		"position": {
-			"x": -1,
-			"y": 0,
-			"z": 0
-		},
-		"tile_id": 1
-	},
-	{
-		"position": {
-			"x": 1,
-			"y": 0,
-			"z": 0
-		},
-		"tile_id": 2
-	},
-	{
-		"position": {
-			"x": -1,
-			"y": -1,
-			"z": 0
-		},
-		"tile_id": 0
-	},
-	{
-		"position": {
-			"x": 0,
-			"y": -1,
-			"z": 0
-		},
-		"tile_id": 0
-	},
-	{
-		"position": {
-			"x": 1,
-			"y": -1,
-			"z": 0
-		},
-		"tile_id": 0
-	},
-	{
-		"position": {
-			"x": 2,
-			"y": -1,
-			"z": 0
-		},
-		"tile_id": 0
-	},
-	{
-		"position": {
-			"x": 3,
-			"y": -1,
-			"z": 0
-		},
-		"tile_id": 0
-	},
-	{
-		"position": {
-			"x": 4,
-			"y": -1,
-			"z": 0
-		},
-		"tile_id": 0
-	},
-	{
-		"position": {
-			"x": 3,
-			"y": 0,
-			"z": 0
-		},
-		"tile_id": 3
-	},
-	{
-		"position": {
-			"x": 4,
-			"y": 0,
-			"z": 0
-		},
-		"tile_id": 7
-	}
-]
+{
+    "tiles": [
+        {
+            "position": {
+                "x": 0,
+                "y": 0,
+                "z": 0
+            },
+            "tile_id": 5
+        },
+        {
+            "position": {
+                "x": 2,
+                "y": 0,
+                "z": 0
+            },
+            "tile_id": 6
+        },
+        {
+            "position": {
+                "x": -1,
+                "y": 0,
+                "z": 0
+            },
+            "tile_id": 1
+        },
+        {
+            "position": {
+                "x": 1,
+                "y": 0,
+                "z": 0
+            },
+            "tile_id": 2
+        },
+        {
+            "position": {
+                "x": -1,
+                "y": -1,
+                "z": 0
+            },
+            "tile_id": 0
+        },
+        {
+            "position": {
+                "x": 0,
+                "y": -1,
+                "z": 0
+            },
+            "tile_id": 0
+        },
+        {
+            "position": {
+                "x": 1,
+                "y": -1,
+                "z": 0
+            },
+            "tile_id": 0
+        },
+        {
+            "position": {
+                "x": 2,
+                "y": -1,
+                "z": 0
+            },
+            "tile_id": 0
+        },
+        {
+            "position": {
+                "x": 3,
+                "y": -1,
+                "z": 0
+            },
+            "tile_id": 0
+        },
+        {
+            "position": {
+                "x": 4,
+                "y": -1,
+                "z": 0
+            },
+            "tile_id": 0
+        },
+        {
+            "position": {
+                "x": 3,
+                "y": 0,
+                "z": 0
+            },
+            "tile_id": 3
+        },
+        {
+            "position": {
+                "x": 4,
+                "y": 0,
+                "z": 0
+            },
+            "tile_id": 7
+        }
+    ],
+    "camera": {
+        "origin": {
+            "x": 1.378685712814331,
+            "y": -1.0,
+            "z": 0.5471602082252502
+        },
+        "offset": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "zoom": 3.0,
+        "yawRotation": -165.04989624023438,
+        "pitchRotation": -49.30564498901367
+    }
+}

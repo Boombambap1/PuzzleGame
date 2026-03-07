@@ -93,6 +93,8 @@ public class GameState : MonoBehaviour
     /// </summary>
     public void RemoveObjectFromGrid(Vector3Int pos)
     {
+        InitializeDictionaries();
+        
         if (objectGrid.TryGetValue(pos, out Object obj))
         {
             foreach (Vector3Int occupiedPos in GetOccupiedPositions(obj))
@@ -128,6 +130,7 @@ public class GameState : MonoBehaviour
         objectGrid.Clear();
         allObjects.Clear();
         player = null;
+        winConditions.Clear();
     }
 
     /// <summary>
@@ -135,6 +138,7 @@ public class GameState : MonoBehaviour
     /// </summary>
     public Object GetObjectAt(Vector3Int pos)
     {
+        InitializeDictionaries();
         objectGrid.TryGetValue(pos, out Object obj);
         return obj;
     }

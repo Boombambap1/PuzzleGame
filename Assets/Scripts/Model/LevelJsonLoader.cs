@@ -5,6 +5,7 @@ public class LevelJsonLoader : MonoBehaviour
 {
     private GeoState geoState;
     private GameState gameState;
+    private CameraController cameraController;
 
     // Auto-generated placeholder objects used as identity keys for each color
     private GameObject greenBoxPrefab;
@@ -17,36 +18,14 @@ public class LevelJsonLoader : MonoBehaviour
 
     private static readonly string[] colorNames = { "green", "red", "blue", "yellow" };
 
-    public GameObject GetColorPrefab(string color)
-    {
-        return color.ToLower() switch
-        {
-            "green" => greenBoxPrefab,
-            "red" => redBoxPrefab,
-            "blue" => blueBoxPrefab,
-            "yellow" => yellowBoxPrefab,
-            _ => null
-        };
-    }
+    [Header("Geo Models")]
+    [SerializeField] private GameObject baseBlockModel;
+    [SerializeField] private GameObject[] spawnModels = new GameObject[4];
+    [SerializeField] private GameObject[] exitModels = new GameObject[4];
 
-    void Awake()
-    {
-        geoState = FindObjectOfType<GeoState>();
-        gameState = FindObjectOfType<GameState>();
-
-        greenBoxPrefab = CreateColorKey("GreenBox");
-        redBoxPrefab = CreateColorKey("RedBox");
-        blueBoxPrefab = CreateColorKey("BlueBox");
-        yellowBoxPrefab = CreateColorKey("YellowBox");
-    }
-
-    private GameObject CreateColorKey(string name)
-    {
-        GameObject obj = new GameObject(name);
-        obj.transform.SetParent(transform);
-        obj.SetActive(false);
-        return obj;
-    }
+    [Header("Object Models")]
+    [SerializeField] private GameObject[] boxModels = new GameObject[3];
+    [SerializeField] private GameObject playerModel;
 
     [System.Serializable]
     private class LevelTilePosition
@@ -64,22 +43,70 @@ public class LevelJsonLoader : MonoBehaviour
     }
 
     [System.Serializable]
-    private class LevelTileEntryList
+    private class SerializableVec3
     {
-        public LevelTileEntry[] tiles;
+        public float x;
+        public float y;
+        public float z;
+
+        public Vector3 ToVector3()
+        {
+            return new Vector3(x, y, z);
+        }
     }
 
+    [System.Serializable]
+    private class LevelCameraSettings
+    {
+        public SerializableVec3 origin;
+        public SerializableVec3 offset;
+        public float zoom = 5f;
+        public float yawRotation = 0f;
+        public float pitchRotation = -45f;
+    }
+
+    [System.Serializable]
+    private class LevelJsonRoot
+    {
+        public LevelTileEntry[] tiles;
+        public LevelCameraSettings camera;
+    }
+
+    void Awake()
+    {
+        geoState = FindObjectOfType<GeoState>();
+        gameState = FindObjectOfType<GameState>();
+        cameraController = FindObjectOfType<CameraController>();
+
+        greenBoxPrefab = CreateColorKey("GreenBox");
+        redBoxPrefab = CreateColorKey("RedBox");
+        blueBoxPrefab = CreateColorKey("BlueBox");
+        yellowBoxPrefab = CreateColorKey("YellowBox");
+    }
+
+    public GameObject GetColorPrefab(string color)
+    {
+        switch (color.ToLower())
+        {
+            case "green": return greenBoxPrefab;
+            case "red": return redBoxPrefab;
+            case "blue": return blueBoxPrefab;
+            case "yellow": return yellowBoxPrefab;
+            default: return null;
+        }
+    }
 
     public void LoadLevelFromJson(string json)
     {
         geoState.ClearAllGeo();
+        gameState.ClearAllObjects();
         ClearVisuals();
 
         string trimmed = json.Trim();
         string wrapped = trimmed.StartsWith("[") ? "{\"tiles\":" + trimmed + "}" : trimmed;
 
-        LevelTileEntryList entryList = JsonUtility.FromJson<LevelTileEntryList>(wrapped);
-        if (entryList == null || entryList.tiles == null)
+        LevelJsonRoot levelData = JsonUtility.FromJson<LevelJsonRoot>(wrapped);
+        if (levelData == null || levelData.tiles == null)
         {
             Debug.LogError("failed to parse json");
             return;
@@ -90,7 +117,7 @@ public class LevelJsonLoader : MonoBehaviour
         Dictionary<int, List<Vector3Int>> spawnGroups = new Dictionary<int, List<Vector3Int>>();
         List<LevelTileEntry> geoEntries = new List<LevelTileEntry>();
 
-        foreach (LevelTileEntry entry in entryList.tiles)
+        foreach (LevelTileEntry entry in levelData.tiles)
         {
             if (entry == null || entry.position == null) continue;
 
@@ -109,7 +136,7 @@ public class LevelJsonLoader : MonoBehaviour
                     // Spawn tile
                     geoColorOverrides[below] = (GeoType.Spawn, entry.tile_id);
                     if (prefab != null) geoState.RegisterSpawnPoint(prefab, below);
-                    
+
                     if (!spawnGroups.ContainsKey(entry.tile_id))
                         spawnGroups[entry.tile_id] = new List<Vector3Int>();
                     spawnGroups[entry.tile_id].Add(pos);
@@ -131,7 +158,7 @@ public class LevelJsonLoader : MonoBehaviour
         foreach (LevelTileEntry entry in geoEntries)
         {
             Vector3Int pos = GetPosition(entry);
-            
+
             if (geoColorOverrides.TryGetValue(pos, out var colorInfo))
             {
                 geoState.PlaceGeoAt(pos, colorInfo.type);
@@ -149,6 +176,100 @@ public class LevelJsonLoader : MonoBehaviour
         {
             SpawnObjectsFromGroup(kvp.Key, kvp.Value);
         }
+
+        ApplyCameraFromLevelData(levelData);
+    }
+
+    private void ApplyCameraFromLevelData(LevelJsonRoot levelData)
+    {
+        if (cameraController == null)
+        {
+            cameraController = FindObjectOfType<CameraController>();
+        }
+
+        if (cameraController == null)
+        {
+            return;
+        }
+
+        Vector3 centeredOrigin = CalculateCenteredOrigin(levelData.tiles);
+
+        Vector3 origin = centeredOrigin;
+        Vector3 offset = Vector3.zero;
+        float zoom = 5f;
+        float yawRotation = 0f;
+        float pitchRotation = -45f;
+
+        if (levelData.camera != null)
+        {
+            if (levelData.camera.origin != null)
+                origin = levelData.camera.origin.ToVector3();
+            if (levelData.camera.offset != null)
+                offset = levelData.camera.offset.ToVector3();
+
+            zoom = levelData.camera.zoom;
+            yawRotation = levelData.camera.yawRotation;
+            pitchRotation = levelData.camera.pitchRotation;
+        }
+
+        CameraData data = new CameraData
+        {
+            origin = origin,
+            offset = offset,
+            zoom = zoom,
+            yawRotation = yawRotation,
+            pitchRotation = pitchRotation
+        };
+
+        cameraController.SetCameraData(data);
+    }
+
+    private Vector3 CalculateCenteredOrigin(LevelTileEntry[] tiles)
+    {
+        if (tiles == null || tiles.Length == 0)
+        {
+            return Vector3.zero;
+        }
+
+        bool hasGeoTile = false;
+        float minX = float.PositiveInfinity;
+        float minY = float.PositiveInfinity;
+        float minZ = float.PositiveInfinity;
+        float maxX = float.NegativeInfinity;
+        float maxY = float.NegativeInfinity;
+        float maxZ = float.NegativeInfinity;
+
+        foreach (LevelTileEntry entry in tiles)
+        {
+            if (entry == null || entry.position == null)
+            {
+                continue;
+            }
+
+            if (entry.tile_id != 0)
+            {
+                continue;
+            }
+
+            hasGeoTile = true;
+            minX = Mathf.Min(minX, entry.position.x);
+            minY = Mathf.Min(minY, entry.position.y);
+            minZ = Mathf.Min(minZ, entry.position.z);
+            maxX = Mathf.Max(maxX, entry.position.x);
+            maxY = Mathf.Max(maxY, entry.position.y);
+            maxZ = Mathf.Max(maxZ, entry.position.z);
+        }
+
+        if (!hasGeoTile)
+        {
+            return Vector3.zero;
+        }
+
+        return new Vector3(
+            (minX + maxX) * 0.5f,
+            (minY + maxY) * 0.5f,
+            (minZ + maxZ) * 0.5f
+        );
     }
 
     private Vector3Int GetPosition(LevelTileEntry entry)
@@ -168,7 +289,7 @@ public class LevelJsonLoader : MonoBehaviour
 
             // Check for adjacent pair to form 1x2 box
             int pairedIndex = FindAdjacentPair(positions, i, used);
-            
+
             if (pairedIndex >= 0)
             {
                 Vector3Int rotation = positions[pairedIndex] - positions[i];
@@ -212,6 +333,14 @@ public class LevelJsonLoader : MonoBehaviour
         return null;
     }
 
+    private GameObject CreateColorKey(string name)
+    {
+        GameObject obj = new GameObject(name);
+        obj.transform.SetParent(transform);
+        obj.SetActive(false);
+        return obj;
+    }
+
     private void ClearVisuals()
     {
         if (levelRoot != null)
@@ -222,15 +351,6 @@ public class LevelJsonLoader : MonoBehaviour
         levelRoot = root.transform;
     }
 
-[Header("Geo Models")]
-[SerializeField] private GameObject baseBlockModel;
-[SerializeField] private GameObject[] spawnModels = new GameObject[4]; 
-[SerializeField] private GameObject[] exitModels = new GameObject[4];  
-
-[Header("Object Models")]
-[SerializeField] private GameObject[] boxModels = new GameObject[3];
-[SerializeField] private GameObject playerModel;
-
     private void SpawnVisualBlock(Vector3Int pos, GeoType geoType, int tileId)
     {
         GameObject prefabToSpawn = baseBlockModel;
@@ -238,17 +358,14 @@ public class LevelJsonLoader : MonoBehaviour
         if (geoType == GeoType.Spawn) prefabToSpawn = spawnModels[colorIndex];
         else if (geoType == GeoType.Exit) prefabToSpawn = exitModels[colorIndex];
 
-
         GameObject visualBlock = Instantiate(prefabToSpawn, (Vector3)pos, Quaternion.identity);
         visualBlock.name = $"Tile_{tileId}_{pos}";
         visualBlock.transform.SetParent(levelRoot);
     }
 
-
     private void SpawnPlayer(Vector3Int pos)
     {
         GameObject prefabToSpawn = playerModel != null ? playerModel : GameObject.CreatePrimitive(PrimitiveType.Cube);
-
 
         GameObject playerObj = Instantiate(prefabToSpawn, (Vector3)pos, Quaternion.identity);
         playerObj.name = "Player";
@@ -268,7 +385,7 @@ public class LevelJsonLoader : MonoBehaviour
             case "blue": colorIndex = 1; break;
             case "yellow": colorIndex = 2; break;
         }
-        
+
         GameObject prefabToSpawn = boxModels[colorIndex];
 
         GameObject boxObj = Instantiate(prefabToSpawn, (Vector3)pos, Quaternion.identity);
@@ -298,8 +415,8 @@ public class LevelJsonLoader : MonoBehaviour
 
         GameObject prefabToSpawn = boxModels[colorIndex];
 
-        GameObject visual1 = Instantiate(prefabToSpawn, (Vector3)mainPos, Quaternion.identity, boxObj.transform);
-        GameObject visual2 = Instantiate(prefabToSpawn, (Vector3)(mainPos - rotation), Quaternion.identity, boxObj.transform);
+        Instantiate(prefabToSpawn, (Vector3)mainPos, Quaternion.identity, boxObj.transform);
+        Instantiate(prefabToSpawn, (Vector3)(mainPos - rotation), Quaternion.identity, boxObj.transform);
 
         PushBlocks pushBlocks = boxObj.AddComponent<PushBlocks>();
         pushBlocks.boxColor = color;

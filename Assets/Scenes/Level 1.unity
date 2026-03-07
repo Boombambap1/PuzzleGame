@@ -947,16 +947,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   levelFiles:
-  - {fileID: 4900000, guid: b2ed222ffbad3fd44819d76deb72f9ae, type: 3}
-  - {fileID: 4900000, guid: 63edfad5ea4f2d74d87c66b26aaecab9, type: 3}
-  - {fileID: 4900000, guid: 3223b942930d62a4092e58a1f30f7640, type: 3}
-  - {fileID: 4900000, guid: be4559c3f48a0094c90fc5cfdfa92730, type: 3}
   - {fileID: 4900000, guid: 0d931296d8a040a458cd606c4c41b4f5, type: 3}
-  - {fileID: 4900000, guid: 33211420f0394864692db8b645804933, type: 3}
-  - {fileID: 4900000, guid: 7017899a40d3c224d9a0eb43b5ed162d, type: 3}
-  - {fileID: 4900000, guid: d221dc91283b784449aad2b4f9967b93, type: 3}
-  - {fileID: 4900000, guid: 0233d11a46dac174fb26fadf5db1f8d4, type: 3}
+  - {fileID: 4900000, guid: 3223b942930d62a4092e58a1f30f7640, type: 3}
   - {fileID: 4900000, guid: 1cad82bb52acf1c44b46969a4202772c, type: 3}
+  - {fileID: 4900000, guid: d221dc91283b784449aad2b4f9967b93, type: 3}
+  - {fileID: 4900000, guid: b3ca173b6f72f76409bc93e1350f772c, type: 3}
+  - {fileID: 4900000, guid: b2ed222ffbad3fd44819d76deb72f9ae, type: 3}
+  - {fileID: 4900000, guid: 33211420f0394864692db8b645804933, type: 3}
+  - {fileID: 4900000, guid: 0233d11a46dac174fb26fadf5db1f8d4, type: 3}
+  - {fileID: 4900000, guid: be4559c3f48a0094c90fc5cfdfa92730, type: 3}
+  - {fileID: 4900000, guid: be4559c3f48a0094c90fc5cfdfa92730, type: 3}
   - {fileID: 4900000, guid: 6c4fa3e22097c74499134465d7036fd9, type: 3}
   - {fileID: 4900000, guid: b3ca173b6f72f76409bc93e1350f772c, type: 3}
   jsonLoader: {fileID: 400489719}
@@ -2903,18 +2903,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 1535448282}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d2a97971a69c84dbf9e0d36ac7609e0f, type: 3}
+  m_Script: {fileID: 11500000, guid: af9ac65e2db05784c81cfd07157d338e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 5
-  lookSensitivity: 1.5
-  maxLookAngle: 90
-  cameraSpawn: {x: -6, y: 15, z: -20}
-  cameraAngle: {x: 30, y: 15, z: 0}
-  fov: 20
-  zoomSpeed: 10
-  minHeight: 8
-  maxHeight: 20
+  movementSpeed: 0.08
+  zoomSpeed: 5
+  rotationSpeed: 0.2
+  dragSpeed: 0.0014
+  distance: 100
+  orthographic: 1
+  minZoom: 1
+  maxZoom: 10
+  minPitch: -80
+  maxPitch: -20
 --- !u!114 &1535448287
 MonoBehaviour:
   m_ObjectHideFlags: 0

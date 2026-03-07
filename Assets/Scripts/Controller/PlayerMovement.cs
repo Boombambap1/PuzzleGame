@@ -13,6 +13,9 @@ public class PlayerInput : MonoBehaviour
     [Header("Respawn")]
     public GameObject prefabReference;
     
+    [Header("Camera")]
+    public CameraController cameraController;
+    
     private GamePhysics gamePhysics;
     private GameState gameState;
     private Object playerObject;
@@ -27,6 +30,9 @@ public class PlayerInput : MonoBehaviour
     {
         gamePhysics = FindObjectOfType<GamePhysics>();
         gameState = FindObjectOfType<GameState>();
+        
+        if (cameraController == null)
+            cameraController = FindObjectOfType<CameraController>();
         
         if (gamePhysics == null) { Debug.LogError("PlayerInput: GamePhysics not found!"); return; }
         if (gameState == null) { Debug.LogError("PlayerInput: GameState not found!"); return; }
@@ -87,9 +93,8 @@ public class PlayerInput : MonoBehaviour
     void Update()
     {
         // Auto-trigger respawn when all animations are done and something needs respawning
-        if (gamePhysics.NeedsRespawn() && positionQueue.Count == 0)
+        if (gamePhysics.NeedsRespawn() && positionQueue.Count == 0 && !isAnimating)
         {
-            Debug.Log($"[AutoRespawn] triggered, allBoxesDone check starting");
             bool allBoxesDone = true;
             foreach (PushBlocks box in FindObjectsOfType<PushBlocks>(true))
             {
@@ -102,13 +107,9 @@ public class PlayerInput : MonoBehaviour
 
             if (allBoxesDone)
             {
-                Debug.Log($"[AutoRespawn] triggered, allBoxesDone check starting");
+                Debug.Log($"[AutoRespawn] All animations complete, triggering respawn");
                 gamePhysics.StartStep(Vector3Int.zero);
                 return;
-            }
-            else
-            {
-                Debug.Log($"[AutoRespawn] boxes not done yet");
             }
         }
 
@@ -156,7 +157,12 @@ public class PlayerInput : MonoBehaviour
         // Handle death visibility
         if (playerObject != null && !playerObject.IsAlive() && !isAnimating)
         {
-            gameObject.SetActive(false);
+            // Keep this object active while waiting for respawn so Update keeps running.
+            // Otherwise auto-respawn checks stop after SetActive(false).
+            if (!gamePhysics.NeedsRespawn())
+            {
+                gameObject.SetActive(false);
+            }
             return;
         }
 
@@ -166,14 +172,16 @@ public class PlayerInput : MonoBehaviour
         // Input - always checked, even during animation
         if (Time.time - lastInputTime < inputCooldown) return;
 
-        Vector3Int inputDirection = Vector3Int.zero;
-        if (Input.GetKeyDown(KeyCode.W)) inputDirection = Vector3Int.forward;
-        else if (Input.GetKeyDown(KeyCode.S)) inputDirection = Vector3Int.back;
-        else if (Input.GetKeyDown(KeyCode.A)) inputDirection = Vector3Int.left;
-        else if (Input.GetKeyDown(KeyCode.D)) inputDirection = Vector3Int.right;
+        int dirIndex = -1;
+        if (Input.GetKeyDown(KeyCode.W)) dirIndex = 0;
+        else if (Input.GetKeyDown(KeyCode.D)) dirIndex = 1;
+        else if (Input.GetKeyDown(KeyCode.S)) dirIndex = 2;
+        else if (Input.GetKeyDown(KeyCode.A)) dirIndex = 3;
 
-        if (inputDirection != Vector3Int.zero)
+        if (dirIndex != -1)
         {
+            Vector3Int worldDirection = GetCameraRelativeDirection(dirIndex);
+            
             while (positionQueue.Count > 0)
                 visualPosition = positionQueue.Dequeue();
             transform.position = visualPosition;
@@ -183,7 +191,7 @@ public class PlayerInput : MonoBehaviour
 
             if (playerObject.IsAlive())
             {
-                ProcessMovement(inputDirection);
+                ProcessMovement(worldDirection);
                 lastInputTime = Time.time;
             }
             else if (gamePhysics.NeedsRespawn())
@@ -196,6 +204,19 @@ public class PlayerInput : MonoBehaviour
     private void ProcessMovement(Vector3Int direction)
     {
         gamePhysics.StartStep(direction);
+    }
+    
+    private Vector3Int GetCameraRelativeDirection(int dirIndex)
+    {
+        Vector3Int[] dirs = {Vector3Int.back, Vector3Int.left, Vector3Int.forward, Vector3Int.right};
+
+        if (cameraController == null) return dirs[dirIndex];
+        
+        float cameraYaw = cameraController.GetYawRotation();
+        int indexYaw = Mathf.RoundToInt(cameraYaw / 90f);
+        int index = (dirIndex + indexYaw + 4) % 4;
+        
+        return dirs[index];
     }
     
     public void UpdateVisualPosition()

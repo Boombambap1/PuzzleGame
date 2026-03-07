@@ -58,8 +58,8 @@ public class BoxObject : MonoBehaviour
     
     void OnDestroy()
     {
-        // Unregister when destroyed
-        if (gameState != null && boxObject != null)
+        // Only clean up if this is an individual destruction, not a level clear
+        if (gameState != null && boxObject != null && gameState.GetObjectAt(boxObject.position) == boxObject)
         {
             gameState.RemoveObjectFromGrid(boxObject.position);
         }
